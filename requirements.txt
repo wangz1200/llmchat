@@ -1,0 +1,11 @@
+pymysql
+sqlalchemy
+transformers
+sentence_transformers
+qwen-agent
+pyjwt
+fastapi
+openai
+sse_starlette
+pymilvus
+requests

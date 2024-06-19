@@ -1,0 +1,36 @@
+server:
+  host: 0.0.0.0
+  port: 9000
+
+
+database:
+  type: mysql
+  host: 127.0.0.1
+  port: 3306
+  user: root
+  password: root
+  name: llmchat
+
+
+vector:
+  type: milvus
+  use_gpu: True
+  device: 0
+  host: 127.0.0.1
+  port: 19530
+  user:
+  password:
+
+
+embedding:
+  use_gpu: True
+  device: 0
+  name:
+
+
+llm:
+  host: 127.0.0.1
+  port: 9100
+  api_key: None
+  max_tokens: 8192
+  temperature: 0
