@@ -1,5 +1,5 @@
 from .base import *
-from sentence_transformers import SentenceTransformer
+# from sentence_transformers import SentenceTransformer
 
 
 __all__ = (

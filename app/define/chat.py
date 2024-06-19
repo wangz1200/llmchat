@@ -13,3 +13,8 @@ class ChatReq(BaseModel):
 class ChatKnowledgeReq(ChatReq):
 
     knowledge: str
+
+
+class ChatAgentReq(ChatReq):
+
+    ...

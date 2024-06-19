@@ -3,17 +3,23 @@ import yaml
 
 
 __all__ = (
-    "config",
+    "args",
+    "load",
 )
 
 
-config = {
+args = {
 
 }
 
 
-def load_config(
+def load(
         config_path: str | Path,
 ):
+    global args
     config_path = Path(config_path)
-    pass
+    with config_path.open(
+            mode="r", encoding="utf8"
+    ) as f:
+        args = yaml.safe_load(f)
+

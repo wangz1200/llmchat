@@ -1,3 +1,4 @@
+from . import config
 from . import dao
 from . import embedding
 from . import vector
@@ -6,4 +7,8 @@ from . import auth
 from . import chat
 from .img import img
 from .router import router
-from .config import config
+
+
+config.load(
+    config_path="./config/config.yaml"
+)

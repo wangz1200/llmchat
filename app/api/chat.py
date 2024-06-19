@@ -1,4 +1,4 @@
-from base import *
+from .base import *
 
 
 router = fa.APIRouter(
@@ -20,6 +20,11 @@ async def chat_knowledge(
         req: define.chat.ChatKnowledgeReq
 ):
     pass
+
+
+@router.post("/agent")
+async def chat_agent():
+    return None
 
 
 shared.router.include_router(

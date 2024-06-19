@@ -29,8 +29,8 @@ embedding:
 
 
 llm:
-  host: 127.0.0.1
-  port: 9100
-  api_key: None
+  url: http://10.133.95.100:9103/v1
+  key: "<KEY>"
+  model: gxllm
   max_tokens: 8192
   temperature: 0
