@@ -1,5 +1,7 @@
+import json
+import os.path
+from sentence_transformers import SentenceTransformer
 from .base import *
-# from sentence_transformers import SentenceTransformer
 
 
 __all__ = (
@@ -16,11 +18,23 @@ class Embedding(object):
             normalized: bool = False,
     ):
         super(Embedding, self).__init__()
+        self.config = {}
         self.normalized = normalized
         self.m = SentenceTransformer(
             model_name_or_path=model_name_or_path,
             device=device,
         )
+        config_path = os.path.join(
+            model_name_or_path,
+            "config.json"
+        )
+        if os.path.exists(config_path):
+            with open(config_path, "r", encoding="utf8") as f:
+                self.config = json.load(f)
+
+    @property
+    def hidden_size(self):
+        return self.config.get("hidden_size", -1)
 
     def encode(
             self,

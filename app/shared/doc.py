@@ -12,6 +12,14 @@ class Doc(object):
     def __init__(self):
         super().__init__()
 
+    def split(
+            self,
+            text: str,
+            length: int = 1000,
+            overrided: int = 300,
+    ):
+        pass
+
 
 class Text(Doc):
 

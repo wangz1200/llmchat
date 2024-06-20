@@ -1,12 +1,13 @@
 server:
   host: 0.0.0.0
   port: 9000
+  secret_key: secret_key
 
 
 database:
   type: mysql
-  host: 127.0.0.1
-  port: 3306
+  host: 10.133.95.100
+  port: 9104
   user: root
   password: root
   name: llmchat
@@ -16,16 +17,18 @@ vector:
   type: milvus
   use_gpu: True
   device: 0
-  host: 127.0.0.1
-  port: 19530
+  host: 10.133.95.100
+  port: 9107
   user:
   password:
 
 
 embedding:
+  type: local
   use_gpu: True
   device: 0
-  name:
+  name: text2vec-base-chinese
+  normalized: True
 
 
 llm:

@@ -2,7 +2,10 @@ from .base import *
 
 
 router = fa.APIRouter(
-    prefix="/chat"
+    prefix="/chat",
+    dependencies=[
+        # fa.Depends(shared.token.request),
+    ],
 )
 
 

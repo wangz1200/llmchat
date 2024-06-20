@@ -2,50 +2,65 @@ import sys
 import pymilvus as pm
 
 
-class MilvusConnection(object):
+__all__ = (
+    "Milvus",
+)
+
+
+class Milvus(object):
 
     def __init__(
             self,
             host: str = "127.0.0.1",
-            port: int = 19530,
+            port: int | str = 19530,
             name: str = "default",
     ):
         super().__init__()
+        self._name = name
+        port = int(port)
         pm.connections.connect(
             host=host,
             port=port,
+            db_name=name,
         )
-        self._name = name
-        self.collection = pm.Collection(
-            name=self.name,
-        )
-        self.collection.load()
 
     @property
-    def name(self) -> str:
+    def name(self):
         return self._name
 
-    def create_schema(
+    def collection(
             self,
-            *fields: pm.FieldSchema,
+            name: str,
+            *fields,
             **kwargs,
     ):
         schema = pm.CollectionSchema(
             fields=list(fields),
             description="collection description",
-        )
-        self.collection = pm.Collection(
-            name=self.name,
+        ) if fields else None
+        c = pm.Collection(
+            name=name,
             schema=schema,
+            **kwargs,
         )
+        return c
 
     def has_schema(self):
         return pm.utility.has_collection(
             collection_name=self.name,
         )
 
+    def load(
+            self,
+            collection: str,
+    ):
+        pm.Collection(
+            name=collection
+        ).load()
+
     def create_index(
             self,
+            collection: str,
             field: str = "embedding",
             **kwargs,
     ):
@@ -56,7 +71,7 @@ class MilvusConnection(object):
                 "nlist": kwargs.get("nlist", 2048),
             },
         }
-        status = self.collection.create_index(
+        status = pm.Collection(name=collection).create_index(
             field_name=field,
             index_params=index
         )
@@ -64,15 +79,19 @@ class MilvusConnection(object):
 
     def insert(
             self,
+            name: str,
             vectors,
     ):
         data = [vectors]
-        mr = self.collection.insert(data)
+        mr = pm.Collection(
+            name=name
+        ).insert(data)
         ids = mr.primary_keys
         return ids
 
     def search(
             self,
+            name: str,
             vectors,
             anns_field: str = "embedding",
             top_k: int = 5,
@@ -86,7 +105,7 @@ class MilvusConnection(object):
                 "nprobe": nprobe,
             }
         }
-        res = self.collection.search(
+        res = pm.Collection(name=name).search(
             data=vectors,
             anns_field=anns_field,
             param=params,
@@ -94,18 +113,26 @@ class MilvusConnection(object):
         )
         return res
 
-    def count(self):
-        self.collection.flush()
-        num = self.collection.num_entities
+    def count(
+            self,
+            name: str,
+    ):
+        c = pm.Collection(name=name)
+        c.flush()
+        num = c.num_entities
         return num
 
-    def delete(self):
-        if self.collection:
-            self.collection.drop()
+    def drop(
+            self,
+            name: str,
+    ):
+        c = pm.Collection(name=name)
+        if c:
+            c.drop()
 
 
 if __name__ == "__main__":
-    conn = MilvusConnection(
+    milvus = Milvus(
         host="127.0.0.1",
         port=19530,
     )

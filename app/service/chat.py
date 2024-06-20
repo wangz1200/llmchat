@@ -1,18 +1,7 @@
 import json
-
-import openai
 from .base import *
 
-
-base_url = shared.config.args["llm"]["url"]
-api_key = shared.config.args["llm"]["key"]
 MAX_TOKENS = shared.config.args["llm"]["max_tokens"]
-
-
-llm = openai.OpenAI(
-    base_url=base_url,
-    api_key=api_key,
-)
 
 
 async def chat(
@@ -23,11 +12,10 @@ async def chat(
         temperature: float = 0.0,
 ):
     model = model or shared.config.args["llm"]["model"]
-    max_tokens = max_tokens or MAX_TOKENS
-    text = llm.chat.completions.create(
+    text = state.llm.chat.completions.create(
         messages=messages,
         model=model,
-        max_tokens=max_tokens,
+        max_tokens=max_tokens or MAX_TOKENS,
         stream=True,
         temperature=temperature,
         stop=["<|im_end|>", "<|endoftext|>", ],
@@ -47,9 +35,10 @@ async def chat_with_knowledge(
         messages: List[Dict[str, str]],
         system: str | None = None,
         model: str = "llm",
-        max_tokens: int = 8192,
+        max_tokens: int | None = None,
         temperature: float = 0.0,
 ):
+    max_tokens = max_tokens or MAX_TOKENS
     return chat(
         messages=messages,
         model=model,
@@ -57,3 +46,19 @@ async def chat_with_knowledge(
         temperature=temperature,
     )
 
+
+async def chat_with_tools(
+        messages: List[Dict[str, str]],
+        tools: str | List[str],
+        max_tokens: int | None = None,
+        temperature: float = 0.0,
+):
+    if not messages:
+        yield {
+            "role": "assistant",
+            "content": "信息不能为空",
+        }
+
+
+async def chat_with_agent():
+    pass
