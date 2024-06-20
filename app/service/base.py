@@ -1,6 +1,9 @@
 from typing import Tuple, List, Dict, Any
 import openai
+import sqlalchemy as sa
 from app import shared
+from app import modal
+from app import modal as M
 
 
 class State(object):
@@ -8,7 +11,7 @@ class State(object):
     def __init__(
             self,
             dao: shared.dao.DAO | None = None,
-            vector: shared.vector.Milvus | None = None,
+            vector: shared.vector.MilvusClient | None = None,
             embedding: shared.embedding.Embedding | None = None,
             llm: openai.OpenAI | None = None
     ):
@@ -33,10 +36,11 @@ def _init_db(
     state.dao = dao
     M.db.Dept.register(dao)
     M.db.User.register(dao)
+    M.db.Password.register(dao)
     M.db.UserDept.register(dao)
-    M.db.KDType.register(dao)
-    M.db.KDType.register(dao)
-    M.db.KDDetail.register(dao)
+    M.db.KlType.register(dao)
+    M.db.KlType.register(dao)
+    M.db.KlDetail.register(dao)
     dao.table.create_all(
         checkfirst=True,
     )
@@ -50,10 +54,11 @@ def _init_vector(
         raise TypeError("Only Milvus is supported.")
     host = config.get("host", None)
     port = config.get("port", None)
+    name = config.get("name", "default")
     if host and port:
-        state.vector = shared.vector.Milvus(
-            host=host,
-            port=port,
+        state.vector = shared.vector.MilvusClient(
+            uri=f"http://{host}:{port}",
+            db_name=name,
         )
     else:
         raise ValueError("vector host and port must be specified.")

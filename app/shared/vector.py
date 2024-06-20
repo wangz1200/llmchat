@@ -1,9 +1,11 @@
 import sys
 import pymilvus as pm
+from pymilvus import MilvusClient
 
 
 __all__ = (
     "Milvus",
+    "MilvusClient",
 )
 
 
@@ -45,9 +47,12 @@ class Milvus(object):
         )
         return c
 
-    def has_schema(self):
+    def has_schema(
+            self,
+            collection: str,
+    ):
         return pm.utility.has_collection(
-            collection_name=self.name,
+            collection_name=collection,
         )
 
     def load(

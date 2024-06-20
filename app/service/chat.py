@@ -1,7 +1,19 @@
 import json
 from .base import *
 
-MAX_TOKENS = shared.config.args["llm"]["max_tokens"]
+
+class Chat(object):
+
+    def __init__(
+            self,
+            state: State = state,
+            max_tokens: int | None = None,
+    ):
+        super(Chat, self).__init__()
+        self.state = state
+        self.dao = self.state.dao
+        self.vector = self.state.vector
+        self.max_tokens = max_tokens | shared.config.args["llm"]["max_tokens"]
 
 
 async def chat(

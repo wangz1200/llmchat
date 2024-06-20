@@ -7,9 +7,9 @@ __all__ = (
     "Dept",
     "User",
     "UserDept",
-    "KDType",
-    "KDDoc",
-    "KDDetail",
+    "KlType",
+    "KlDoc",
+    "KlDetail",
 )
 
 
@@ -84,6 +84,26 @@ class User(Table):
         )
 
 
+class Password(Table):
+
+    def __init__(
+            self,
+            name: str | None = "password",
+    ):
+        super().__init__(
+            name=name or "password"
+        )
+
+    @classmethod
+    def columns(cls):
+        return (
+            sa.Column("id", sa.BIGINT, nullable=False),
+            sa.Column("password", sa.VARCHAR(512), nullable=False),
+            sa.Column("create_at", sa.INT, nullable=False, default=0),
+            sa.PrimaryKeyConstraint("id")
+        )
+
+
 class UserDept(Table):
 
     def __init__(
@@ -103,14 +123,14 @@ class UserDept(Table):
         )
 
 
-class KDType(Table):
+class KlType(Table):
 
     def __init__(
             self,
-            name: str | None = "kd_type",
+            name: str | None = "kl_type",
     ):
         super().__init__(
-            name=name or "kd_type",
+            name=name or "kl_type",
         )
 
     @classmethod
@@ -125,29 +145,30 @@ class KDType(Table):
         )
 
 
-class KDDoc(Table):
+class KlDoc(Table):
 
     def __init__(
             self,
-            name: str | None = "kd_doc",
+            name: str | None = "kl_doc",
     ):
         super().__init__(
-            name=name or "kd_doc"
+            name=name or "kl_doc"
         )
 
     @classmethod
     def columns(cls):
         return (
             sa.Column("id", sa.BIGINT, nullable=False),
-            sa.Column("title", sa.VARCHAR(512), nullable=False),
+            sa.Column("type", sa.BIGINT, nullable=False),
             sa.Column("name", sa.VARCHAR(1024), nullable=False),
+            sa.Column("ext", sa.VARCHAR(32), nullable=False),
             sa.Column("create_by", sa.BIGINT, nullable=False, default=0),
             sa.Column("create_at", sa.INT, nullable=False, default=0),
             sa.PrimaryKeyConstraint("id"),
         )
 
 
-class KDDetail(Table):
+class KlDetail(Table):
 
     def __init__(
             self,

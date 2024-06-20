@@ -1,7 +1,7 @@
 from .base import *
 
 
-class AuthReq(BaseModel):
+class LoginReq(BaseModel):
 
     user: str
     password: str

@@ -9,9 +9,10 @@ router = fa.APIRouter(
 )
 
 
-@router.post("")
+@router.post("/upload")
 async def upload(
-        req: define.doc.UploadDoctReq,
+        user: str | None = None,
+        file: fa.UploadFile = fa.File(...),
 ):
     res = define.Result()
     try:
@@ -20,18 +21,6 @@ async def upload(
         res.code = -1
         res.msg = str(ex)
     return res
-
-
-@router.post("/knowledge")
-async def chat_knowledge(
-        req: define.chat.ChatKnowledgeReq
-):
-    pass
-
-
-@router.post("/agent")
-async def chat_agent():
-    return None
 
 
 shared.router.include_router(

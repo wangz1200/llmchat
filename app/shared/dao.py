@@ -108,7 +108,14 @@ class DAO(object):
     def begin(self):
         return self.engine.begin()
 
-    def execute(self, stmt, *args, **kwargs):
+    def execute(
+            self,
+            stmt, *args,
+            tx: sa.Connection | None = None,
+            **kwargs,
+    ):
+        if tx:
+            return tx.execute(stmt, *args, **kwargs)
         with self.trans() as tx:
             return tx.execute(stmt, *args, **kwargs)
 
