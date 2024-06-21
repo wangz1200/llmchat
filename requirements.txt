@@ -14,3 +14,4 @@ numpy
 pyyaml
 starlette
 uvicorn
+itsdangerous

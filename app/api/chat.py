@@ -3,6 +3,7 @@ from .base import *
 
 router = fa.APIRouter(
     prefix="/chat",
+    tags=["Chat", ],
     dependencies=[
         # fa.Depends(shared.token.request),
     ],

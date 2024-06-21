@@ -1,9 +1,15 @@
 from typing import Tuple, List, Dict, Any
+from pathlib import Path
 import openai
 import sqlalchemy as sa
 from app import shared
+from app import define
 from app import modal
-from app import modal as M
+
+
+FILE_MAP = {
+    "txt": shared.doc.Text,
+}
 
 
 class State(object):
@@ -28,19 +34,18 @@ state = State()
 def _init_db(
         config: dict,
 ):
-    from app import modal as M
     type_ = config["type"]
-    if type_ != "mysql":
+    if type_.lower() != "mysql":
         raise TypeError("Only MySQL is supported.")
     dao = shared.dao.MySQL(**config)
     state.dao = dao
-    M.db.Dept.register(dao)
-    M.db.User.register(dao)
-    M.db.Password.register(dao)
-    M.db.UserDept.register(dao)
-    M.db.KlType.register(dao)
-    M.db.KlType.register(dao)
-    M.db.KlDetail.register(dao)
+    modal.db.Dept.register(dao)
+    modal.db.User.register(dao)
+    modal.db.Password.register(dao)
+    modal.db.UserDept.register(dao)
+    modal.db.KlType.register(dao)
+    modal.db.KlDoc.register(dao)
+    modal.db.KlDetail.register(dao)
     dao.table.create_all(
         checkfirst=True,
     )

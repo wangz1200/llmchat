@@ -4,7 +4,8 @@ from .base import *
 
 
 router = fastapi.APIRouter(
-    prefix='/user',
+    prefix="/user",
+    tags=["User", ],
 )
 
 

@@ -4,6 +4,7 @@ from . import auth
 from . import user
 from . import doc
 from . import knowledge
+from . import vector
 from . import chat
 
 

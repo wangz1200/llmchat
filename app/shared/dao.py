@@ -78,7 +78,7 @@ class DAO(object):
             name: str,
             **kwargs
     ):
-        super(DAO, self).__init__(**kwargs)
+        super(DAO, self).__init__()
         self._url = sa.URL.create(
             drivername=driver,
             host=host,
@@ -86,10 +86,9 @@ class DAO(object):
             username=user,
             password=password,
             database=name,
-            **kwargs,
         )
         self.engine: sa.Engine = sa.create_engine(self._url)
-        self.metadata = sa.MetaData()
+        self.metadata: sa.MetaData = sa.MetaData()
         self.table = Table(
             engine=self.engine,
             metadata=self.metadata,

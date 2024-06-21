@@ -26,18 +26,15 @@ class Vector(object):
         schema_.add_field(field_name="id", datatype=DataType.INT64, is_primary=True, auto_increment=False)
         schema_.add_field(field_name="pid", datatype=DataType.INT64)
         schema_.add_field(field_name="embedding", datatype=DataType.FLOAT_VECTOR, dim=self.dim)
-        schema_.add_field(field_name="text", datatype=DataType.VARCHAR)
+        schema_.add_field(field_name="text", datatype=DataType.VARCHAR, max_length=65535)
         return schema_
 
     def index(self):
         index_params = self.mc.prepare_index_params()
         index_params.add_index(
-            field_name="id",
-            index_type="STL_SORT"
-        )
-        index_params.add_index(
             field_name="embedding",
-            index_type="AUTOINDEX",
+            # index_type="AUTOINDEX",
+            index_type="IVF_FLAT",
             metric_type="L2",
             params={
                 "nlist": 1024,

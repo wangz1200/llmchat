@@ -3,6 +3,7 @@ from .base import *
 
 router = fa.APIRouter(
     prefix="/auth",
+    tags=["Auth", ],
 )
 
 

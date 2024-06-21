@@ -15,6 +15,8 @@ __all__ = (
 
 class Table(object):
 
+    __tablename__ = None
+
     def __init__(
             self,
             name: str,
@@ -31,21 +33,23 @@ class Table(object):
             dao: shared.dao.DAO,
             name: str | None = None,
     ):
-        m = cls(name=name)
+        name = name or cls.__tablename__
         t = dao.table.register(
-            m.name, *m.columns(),
+            name, *cls.columns(),
         )
         return t
 
 
 class Dept(Table):
 
+    __tablename__ = "dept"
+
     def __init__(
             self,
             name: str | None = None,
     ):
         super().__init__(
-            name=name or "dept"
+            name=name
         )
 
     @classmethod
@@ -62,12 +66,14 @@ class Dept(Table):
 
 class User(Table):
 
+    __tablename__ = "user"
+
     def __init__(
             self,
-            name: str | None = "user",
+            name: str | None = None,
     ):
         super().__init__(
-            name=name or "user"
+            name=name
         )
 
     @classmethod
@@ -86,12 +92,14 @@ class User(Table):
 
 class Password(Table):
 
+    __tablename__ = "password"
+
     def __init__(
             self,
-            name: str | None = "password",
+            name: str | None = None,
     ):
         super().__init__(
-            name=name or "password"
+            name=name
         )
 
     @classmethod
@@ -106,9 +114,11 @@ class Password(Table):
 
 class UserDept(Table):
 
+    __tablename__ = "user_dept"
+
     def __init__(
             self,
-            name: str | None = "user_dept",
+            name: str | None = None,
     ):
         super().__init__(
             name=name
@@ -125,12 +135,14 @@ class UserDept(Table):
 
 class KlType(Table):
 
+    __tablename__ = "kl_type"
+
     def __init__(
             self,
-            name: str | None = "kl_type",
+            name: str | None = None,
     ):
         super().__init__(
-            name=name or "kl_type",
+            name=name
         )
 
     @classmethod
@@ -138,6 +150,7 @@ class KlType(Table):
         return (
             sa.Column("id", sa.BIGINT, nullable=False),
             sa.Column("pid", sa.BIGINT, nullable=False, default=0),
+            sa.Column("collection", sa.VARCHAR(512), nullable=False, default=""),
             sa.Column("name", sa.VARCHAR(1024), nullable=False),
             sa.Column("create_by", sa.BIGINT, nullable=False, default=0),
             sa.Column("create_at", sa.INT, nullable=False, default=0),
@@ -147,19 +160,21 @@ class KlType(Table):
 
 class KlDoc(Table):
 
+    __tablename__ = "kl_doc"
+
     def __init__(
             self,
-            name: str | None = "kl_doc",
+            name: str | None = None,
     ):
         super().__init__(
-            name=name or "kl_doc"
+            name=name
         )
 
     @classmethod
     def columns(cls):
         return (
             sa.Column("id", sa.BIGINT, nullable=False),
-            sa.Column("type", sa.BIGINT, nullable=False),
+            sa.Column("pid", sa.BIGINT, nullable=False),
             sa.Column("name", sa.VARCHAR(1024), nullable=False),
             sa.Column("ext", sa.VARCHAR(32), nullable=False),
             sa.Column("create_by", sa.BIGINT, nullable=False, default=0),
@@ -170,12 +185,14 @@ class KlDoc(Table):
 
 class KlDetail(Table):
 
+    __tablename__ = "kl_detail"
+
     def __init__(
             self,
-            name: str | None = "kd_detail"
+            name: str | None = None,
     ):
         super().__init__(
-            name=name or "kd_detail"
+            name=name
         )
 
     @classmethod
@@ -193,12 +210,14 @@ class KlDetail(Table):
 
 class ChatLog(Table):
 
+    __tablename__ = "chat_log"
+
     def __init__(
             self,
-            name: str | None = "chat_log"
+            name: str | None = None,
     ):
         super().__init__(
-            name=name or "chat_log"
+            name=name
         )
 
     @classmethod

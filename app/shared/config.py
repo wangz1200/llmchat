@@ -22,4 +22,6 @@ def load(
             mode="r", encoding="utf8"
     ) as f:
         args = yaml.safe_load(f)
+        root_path = Path(config_path).parent.parent.absolute()
+        args["root"]["path"] = root_path.__str__()
 
