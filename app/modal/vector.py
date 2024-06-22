@@ -1,6 +1,6 @@
 from typing import Tuple, List, Dict, Any
 from app import shared
-from pymilvus import DataType
+from pymilvus import MilvusClient, DataType
 
 
 __all__ = (
@@ -8,32 +8,28 @@ __all__ = (
 )
 
 
-class Vector(object):
+class Milvus(object):
 
-    def __init__(
-            self,
-            dim: int,
+    @classmethod
+    def schema(
+            cls,
+            dim: int
     ):
-        self.mc = shared.vector.MilvusClient
-        self.dim = dim
-
-    def schema(self):
-
-        schema_ = self.mc.create_schema(
+        schema_ = MilvusClient.create_schema(
             auto_id=False,
             enable_dynamic_field=False,
         )
         schema_.add_field(field_name="id", datatype=DataType.INT64, is_primary=True, auto_increment=False)
         schema_.add_field(field_name="pid", datatype=DataType.INT64)
-        schema_.add_field(field_name="embedding", datatype=DataType.FLOAT_VECTOR, dim=self.dim)
+        schema_.add_field(field_name="embedding", datatype=DataType.FLOAT_VECTOR, dim=dim)
         schema_.add_field(field_name="text", datatype=DataType.VARCHAR, max_length=65535)
         return schema_
 
-    def index(self):
-        index_params = self.mc.prepare_index_params()
+    @classmethod
+    def index(cls):
+        index_params = MilvusClient.prepare_index_params()
         index_params.add_index(
             field_name="embedding",
-            # index_type="AUTOINDEX",
             index_type="IVF_FLAT",
             metric_type="L2",
             params={

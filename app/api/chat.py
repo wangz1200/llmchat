@@ -11,7 +11,7 @@ router = fa.APIRouter(
 
 
 @router.post("")
-async def chat_chat(
+async def post_chat(
         req: define.chat.ChatReq,
 ):
     return EventSourceResponse(service.chat.chat(

@@ -21,3 +21,8 @@ class AddKlTypeReq(BaseModel):
     data: KlType | List[KlType]
 
 
+class GetKlTypeListReq(BaseModel):
+
+    page_no: int | None = None
+    page_size: int | None = None
+

@@ -44,6 +44,8 @@ class Embedding(object):
         text = (
             text if isinstance(text, list) else [text]
         )
+        if not text:
+            return []
         normalized = normalized or self.normalized
         embeddings = self.m.encode(
             sentences=text,
@@ -53,11 +55,3 @@ class Embedding(object):
             {"embedding": embed.tolist()} for embed in embeddings
         ]
         return ret
-
-    def __call__(
-            self,
-            text: str | List[str],
-    ):
-        return self.encode(
-            text=text,
-        )

@@ -10,37 +10,16 @@ class Doc(object):
 
     def __init__(
             self,
-            state: State = state,
+            state: State | None = None,
     ):
         super().__init__()
         self.state = state
-        self.dao = self.state.dao
-        self.vector = self.state.vector
-
-    def load(
-            self,
-            file_path: str | Path,
-    ):
-        pass
-
-    def load_file(
-            self,
-            id_: int | str,
-            ext: str,
-    ):
-        file_dir = shared.config.args["root"]["path"]
-        file_name = f"{id_}.{ext}"
-        file_path = Path(file_dir, file_name)
-        match ext.lower():
-            case "txt":
-                loader = shared.doc.Text
-            case _:
-                raise Exception("不支持的文档类型")
-        return loader(file_path)
 
     def embedding(
             self,
             kl_doc_id: str | int | List[str] | List[int],
+            chunk_size: int = 1000,
+            override_size: int = 300,
     ):
         if isinstance(kl_doc_id, str):
             kl_doc_id = kl_doc_id.split(",")
@@ -61,17 +40,36 @@ class Doc(object):
             )
             res = tx.execute(stmt)
             rows = self.state.dao.list_(rows=res)
+        file_dir = shared.config.args["root"]["path"]
         data = {}
         for row in rows:
             id_ = row["id"]
             ext = row["ext"]
             cn = row["collection"]
-            doc_ = self.load_file(
-                id_=id_, ext=ext,
+            file_name = f"{id_}.{ext}"
+            doc_ = shared.doc.load_from_file(
+                file_path=Path(file_dir, file_name)
+            )
+            chunks = doc_.split(
+                chunk_size=chunk_size,
+                overlap_size=override_size,
+            )
+            embedding = self.state.embedding.encode(
+                text=chunks
             )
             item = data.get(cn, [])
+            for i, emb in enumerate(embedding):
+                item.append({
+                    "id": shared.snow.sid(),
+                    "pid": id_,
+                    "embedding": emb["embedding"],
+                    "text": chunks[i],
+                })
+            data[cn] = item
+        return data
 
 
 doc = Doc(
-    state=state
+    state=state,
 )
+

@@ -28,6 +28,14 @@ async def post_knowledge_type(
     return res
 
 
+@router.get("/type/list")
+async def get_knowledge_type_list(
+        req: define.knowledge.GetKlTypeListReq
+):
+    res = define.Result()
+    return res
+
+
 @router.post("/reset")
 async def post_knowledge_reset(
         req: define.knowledge.ResetKlReq

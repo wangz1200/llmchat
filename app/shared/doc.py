@@ -3,12 +3,29 @@ from pathlib import Path
 
 
 __all__ = (
+    "load_from_file",
     "Doc",
     "Text",
     "Word",
     "Excel",
     "PDF",
 )
+
+
+def load_from_file(
+        file_path: str | Path,
+):
+    file_path = Path(file_path)
+    if not file_path.exists():
+        raise FileExistsError("文件不存在。")
+    ext = file_path.suffix
+    match ext.lower():
+        case ".txt":
+            cls = Text
+        case _:
+            raise Exception(f"不支持的文件格式{ext}")
+    loader = cls(file_path)
+    return loader
 
 
 class Doc(object):

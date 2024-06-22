@@ -7,17 +7,12 @@ from app import define
 from app import modal
 
 
-FILE_MAP = {
-    "txt": shared.doc.Text,
-}
-
-
 class State(object):
 
     def __init__(
             self,
             dao: shared.dao.DAO | None = None,
-            vector: shared.vector.MilvusClient | None = None,
+            vector: shared.vector.Milvus | None = None,
             embedding: shared.embedding.Embedding | None = None,
             llm: openai.OpenAI | None = None
     ):
@@ -61,7 +56,7 @@ def _init_vector(
     port = config.get("port", None)
     name = config.get("name", "default")
     if host and port:
-        state.vector = shared.vector.MilvusClient(
+        state.vector = shared.vector.Milvus(
             uri=f"http://{host}:{port}",
             db_name=name,
         )

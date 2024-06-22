@@ -24,6 +24,7 @@ vector:
   device: 0
   host: 10.133.95.100
   port: 9107
+  name: llmchat
   user:
   password:
 
