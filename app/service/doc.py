@@ -15,6 +15,15 @@ class Doc(object):
         super().__init__()
         self.state = state
 
+    def list_(
+            self,
+            id_: str | int | None = None,
+            pid: str | int | None = None,
+            page_no: int = 1,
+            page_size: int = 30,
+    ):
+        pass
+
     def embedding(
             self,
             kl_doc_id: str | int | List[str] | List[int],

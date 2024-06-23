@@ -16,29 +16,12 @@ class _Password(object):
         self.state = state
         self.dao = self.state.dao
 
-    def _prepare(
-            self,
-            req: define.user.UserReq
-    ):
-        ret = []
-        data = req.data
-        if not isinstance(data, list):
-            data = [data, ]
-        ret.append(
-            {
-                "id": d["id"],
-                "password": d["password"],
-            }
-            for d in data if d["id"] and d["password"]
-        )
-        return ret
-
     def add(
             self,
-            req: define.user.UserReq,
+            req: define.user.AddUserReq,
             tx: sa.Connection | None = None,
     ):
-        data = self._prepare(req=req)
+        data = req.password()
         if not data:
             return
         t = self.dao.table["password"]
@@ -52,16 +35,19 @@ class _Password(object):
 
     def set_(
             self,
-            req: define.user.UserReq,
+            req: define.user.SetUserReq,
             tx: sa.Connection | None = None,
     ):
-        data = self._prepare(req=req)
+        data = req.password()
         if not data:
             return
         t = self.dao.table["password"]
         for d in data:
             stmt = self.state.dao.update(t).values(d)
-            self.state.dao.execute(stmt=stmt, tx=tx)
+            self.state.dao.execute(
+                stmt=stmt,
+                tx=tx,
+            )
 
 
 class _Dept(object):
@@ -76,21 +62,11 @@ class _Dept(object):
 
     def add(
             self,
-            req: define.user.UserReq,
+            req: define.user.AddUserReq,
             tx: sa.Connection | None = None,
     ):
-        ret = []
-        data = req.data
-        if not isinstance(data, list):
-            data = [data, ]
-        ret.append(
-            {
-                "id": d["id"],
-                "dept": d["dept"],
-            }
-            for d in data if d["id"] and d["dept"]
-        )
-        if not ret:
+        data = req.dept()
+        if not data:
             return
         t = self.dao.table["user_dept"]
         stmt = self.state.dao.insert(
@@ -103,9 +79,19 @@ class _Dept(object):
 
     def set_(
             self,
-            req: define.user.UserReq,
+            req: define.user.SetUserReq,
+            tx: sa.Connection | None = None,
     ):
-        pass
+        data = req.dept()
+        if not data:
+            return
+        t = self.dao.table["user_dept"]
+        for d in data:
+            stmt = self.state.dao.update(t).values(d)
+            self.state.dao.execute(
+                stmt=stmt,
+                tx=tx,
+            )
 
 
 class User(object):
@@ -128,71 +114,63 @@ class User(object):
             self,
             req: define.user.AddUserReq
     ):
-        t_user = self.dao.table["user"]
-        t_password = self.dao.table["password"]
-        t_user_dept = self.dao.table["user_dept"]
-        user_data = req.user_data()
-        password_data = req.password_data()
-        dept_data = req.dept_data()
         with self.state.dao.trans() as tx:
-            if user_data:
-                self.state.dao.execute(
-                    self.state.dao.insert(
-                        t_user, update=req.update
-                    ).values(user_data),
-                    tx=tx,
-                )
-            if password_data:
-                self.state.dao.execute(
-                    self.state.dao.insert(
-                        t_password, update=req.update
-                    ).values(password_data),
-                    tx=tx,
-                )
-            if dept_data:
-                self.state.dao.execute(
-                    self.state.dao.insert(
-                        t_user_dept, update=req.update
-                    ).values(dept_data),
-                    tx=tx,
-                )
+            data = req.user()
+            self.state.dao.execute(
+                self.state.dao.insert(
+                    table=self.dao.table["user"],
+                    update=req.update
+                ).values(data),
+                tx=tx,
+            )
+            self.password.add(
+                req=req,
+                tx=tx,
+            )
+            self.dept.add(
+                req=req,
+                tx=tx,
+            )
 
     def set_(
             self,
-            req: define.user.UserReq
+            req: define.user.SetUserReq
     ):
+        with self.state.dao.trans() as tx:
+            data = req.user()
+            self.state.dao.execute(
+                self.state.dao.update(
+                    table=self.dao.table["user"],
+                ).values(data),
+                tx=tx,
+            )
+            self.password.set_(
+                req=req,
+                tx=tx,
+            )
+            self.dept.set_(
+                req=req,
+                tx=tx,
+            )
 
-    def login(
+    def exists(
             self,
-            user_: str,
-            password: str,
+            id_: str | int | List[int] | List[str],
     ):
-        t_user = self.dao.table["user"]
-        t_password = self.dao.table["password"]
-        stmt = self.dao.select(
-            t_user.c.id.label("id"),
-            t_user.c.user.label("user"),
-            t_user.c.name.label("name"),
-            sa.or_(t_password.c.password, "abc123").label("password"),
-        ).select_from(
-            t_user.outjoin(t_password, t_user.c.id == t_password.c.user)
+        if isinstance(id_, str):
+            id_ = id_.split(",")
+        if not isinstance(id_, list):
+            id_ = [id_, ]
+        if not id_:
+            raise ValueError("ID不能为空。")
+        t = self.dao.table["user"]
+        stmt = self.state.dao.select(
+            sa.func.count(t.c.id)
         ).where(
-            t_user.c.user == user_
+            t.c.id.in_(id_)
         )
-        res = self.dao.list_(
-            rows=self.dao.execute(stmt)
-        )
-        if len(res) == 0:
-            raise Exception("用户不存在。")
-        res = res[0]
-        if password != res["password"]:
-            raise Exception("密码错误。")
-        token = shared.token.build(
-            user=res["user"]
-        )
-        return {
-            "authority": token,
-        }
+        count = self.state.dao.execute(stmt).scalar()
+        return count == len(id_)
 
 
 user = User(

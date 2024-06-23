@@ -19,13 +19,6 @@ async def post_chat(
     ))
 
 
-@router.post("/knowledge")
-async def chat_knowledge(
-        req: define.chat.ChatKnowledgeReq
-):
-    pass
-
-
 @router.post("/agent")
 async def chat_agent():
     return None
