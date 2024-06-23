@@ -40,11 +40,14 @@ class Milvus(object):
 
     def drop(
             self,
-            name: str,
+            name: str | List[str],
     ):
-        self.client.drop_collection(
-            collection_name=name,
-        )
+        if not isinstance(name, list):
+            name = [name, ]
+        for n in name:
+            self.client.drop_collection(
+                collection_name=n,
+            )
 
     def search(
             self,

@@ -16,14 +16,96 @@ class _Password(object):
         self.state = state
         self.dao = self.state.dao
 
+    def _prepare(
+            self,
+            req: define.user.UserReq
+    ):
+        ret = []
+        data = req.data
+        if not isinstance(data, list):
+            data = [data, ]
+        ret.append(
+            {
+                "id": d["id"],
+                "password": d["password"],
+            }
+            for d in data if d["id"] and d["password"]
+        )
+        return ret
+
+    def add(
+            self,
+            req: define.user.UserReq,
+            tx: sa.Connection | None = None,
+    ):
+        data = self._prepare(req=req)
+        if not data:
+            return
+        t = self.dao.table["password"]
+        stmt = self.state.dao.insert(
+            t, update=req.update
+        ).values(data)
+        self.state.dao.execute(
+            stmt=stmt,
+            tx=tx
+        )
+
     def set_(
             self,
-            user_: str,
-            password: str,
-            tx=None,
+            req: define.user.UserReq,
+            tx: sa.Connection | None = None,
     ):
-        t_password = self.dao.table["password"]
-        stmt = sa.insert(t_password).values()
+        data = self._prepare(req=req)
+        if not data:
+            return
+        t = self.dao.table["password"]
+        for d in data:
+            stmt = self.state.dao.update(t).values(d)
+            self.state.dao.execute(stmt=stmt, tx=tx)
+
+
+class _Dept(object):
+
+    def __init__(
+            self,
+            state: State = state,
+    ):
+        super().__init__()
+        self.state = state
+        self.dao = self.state.dao
+
+    def add(
+            self,
+            req: define.user.UserReq,
+            tx: sa.Connection | None = None,
+    ):
+        ret = []
+        data = req.data
+        if not isinstance(data, list):
+            data = [data, ]
+        ret.append(
+            {
+                "id": d["id"],
+                "dept": d["dept"],
+            }
+            for d in data if d["id"] and d["dept"]
+        )
+        if not ret:
+            return
+        t = self.dao.table["user_dept"]
+        stmt = self.state.dao.insert(
+            t, update=req.update
+        ).values(data)
+        self.state.dao.execute(
+            stmt=stmt,
+            tx=tx
+        )
+
+    def set_(
+            self,
+            req: define.user.UserReq,
+    ):
+        pass
 
 
 class User(object):
@@ -38,6 +120,47 @@ class User(object):
         self.password = _Password(
             state=self.state
         )
+        self.dept = _Dept(
+            state=self.state
+        )
+
+    def add(
+            self,
+            req: define.user.AddUserReq
+    ):
+        t_user = self.dao.table["user"]
+        t_password = self.dao.table["password"]
+        t_user_dept = self.dao.table["user_dept"]
+        user_data = req.user_data()
+        password_data = req.password_data()
+        dept_data = req.dept_data()
+        with self.state.dao.trans() as tx:
+            if user_data:
+                self.state.dao.execute(
+                    self.state.dao.insert(
+                        t_user, update=req.update
+                    ).values(user_data),
+                    tx=tx,
+                )
+            if password_data:
+                self.state.dao.execute(
+                    self.state.dao.insert(
+                        t_password, update=req.update
+                    ).values(password_data),
+                    tx=tx,
+                )
+            if dept_data:
+                self.state.dao.execute(
+                    self.state.dao.insert(
+                        t_user_dept, update=req.update
+                    ).values(dept_data),
+                    tx=tx,
+                )
+
+    def set_(
+            self,
+            req: define.user.UserReq
+    ):
 
     def login(
             self,

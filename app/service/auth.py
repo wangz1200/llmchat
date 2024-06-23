@@ -1,10 +1,27 @@
 from .base import *
-from .user import user
+from .user import user as svc_user
 
 
 __all__ = (
     "auth",
 )
+
+
+class _AD(object):
+
+    def __init__(
+            self,
+            url: str,
+    ):
+        super().__init__()
+        self.url = url
+
+    def verify(
+            self,
+            user: str,
+            password: str,
+    ):
+        pass
 
 
 class Auth(object):
@@ -15,16 +32,15 @@ class Auth(object):
     ):
         super().__init__()
         self.state = state
-        self.dao = self.state.dao
 
-    def login(
+    def verify(
             self,
-            user_: str,
+            user: str,
             password: str,
     ):
-        t_user = self.dao.table["user"]
-        t_password = self.dao.table["password"]
-        stmt = self.dao.select(
+        t_user = self.state.dao.table["user"]
+        t_password = self.state.dao.table["password"]
+        stmt = self.state.dao.select(
             t_user.c.id.label("id"),
             t_user.c.user.label("user"),
             t_user.c.name.label("name"),
@@ -32,10 +48,10 @@ class Auth(object):
         ).select_from(
             t_user.outjoin(t_password, t_user.c.id == t_password.c.user)
         ).where(
-            t_user.c.user == user_
+            t_user.c.user == user
         )
-        res = self.dao.list_(
-            rows=self.dao.execute(stmt)
+        res = self.state.dao.list_(
+            rows=self.state.dao.execute(stmt)
         )
         if len(res) == 0:
             raise Exception("用户不存在。")
@@ -46,8 +62,19 @@ class Auth(object):
             user=res["user"]
         )
         return {
-            "authority": token,
+            "token": token,
         }
+
+    def login(
+            self,
+            user: str,
+            password: str,
+            method: str = "",
+    ):
+        return self.verify(
+            user=user,
+            password=password,
+        )
 
 
 auth = Auth(

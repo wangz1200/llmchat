@@ -15,6 +15,7 @@ async def post_add_vector(
     try:
         service.vector.add(
             name=req.name,
+            dim=req.dim,
         )
     except Exception as ex:
         res.code = -1

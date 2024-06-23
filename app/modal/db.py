@@ -82,7 +82,6 @@ class User(Table):
             sa.Column("id", sa.BIGINT, nullable=False),
             sa.Column("user", sa.VARCHAR(512), nullable=False),
             sa.Column("name", sa.VARCHAR(512), nullable=False),
-            sa.Column("dept", sa.BIGINT, nullable=False, default=0),
             sa.Column("order", sa.INT, nullable=False, default=0),
             sa.Column("create_by", sa.BIGINT, nullable=False, default=0),
             sa.Column("create_at", sa.INT, nullable=False, default=0),
@@ -107,7 +106,6 @@ class Password(Table):
         return (
             sa.Column("id", sa.BIGINT, nullable=False),
             sa.Column("password", sa.VARCHAR(512), nullable=False),
-            sa.Column("create_at", sa.INT, nullable=False, default=0),
             sa.PrimaryKeyConstraint("id")
         )
 
@@ -226,7 +224,7 @@ class ChatLog(Table):
             sa.Column("id", sa.BIGINT, nullable=False, default=0),
             sa.Column("pid", sa.BIGINT, nullable=False, default=0),
             sa.Column("type", sa.INT, nullable=False, default=0),
-            sa.Column("role", sa.INT, nullable=False, default=0),
+            sa.Column("role", sa.VARCHAR(128), nullable=False, default=""),
             sa.Column("content", sa.TEXT, nullable=False, default=""),
             sa.Column("create_by", sa.BIGINT, nullable=False, default=0),
             sa.Column("create_at", sa.INT, nullable=False, default=0),

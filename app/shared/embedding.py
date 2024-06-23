@@ -52,6 +52,8 @@ class Embedding(object):
             normalize_embeddings=normalized
         )
         ret = [
-            {"embedding": embed.tolist()} for embed in embeddings
+            {
+                "embedding": embed.tolist()
+            } for embed in embeddings
         ]
         return ret

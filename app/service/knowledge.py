@@ -3,7 +3,7 @@ from app.service.doc import doc as svc_doc
 
 
 __all__ = (
-    "kl",
+    "knowledge",
 )
 
 
@@ -44,6 +44,22 @@ class _Type(object):
             stmt = self.state.dao.insert(t_type).values(data_)
             tx.execute(stmt)
 
+    def set_(
+            self,
+            data: Dict | List[Dict],
+    ):
+        if not isinstance(data, list):
+            data = [data, ]
+        t_kl_type = self.state.dao.table["kl_type"]
+        stmt = self.state.dao.update(t_kl_type)
+        with self.state.dao.trans() as tx:
+            for d in data:
+                id_ = d.pop("id", None)
+                if not id_:
+                    continue
+                stmt_ = stmt.where(stmt.c.id == id_).values(**d)
+                tx.execute(stmt_)
+
     def delete(
             self,
             id_: str | int | List[str] | List[int] | None = None,
@@ -56,6 +72,20 @@ class _Type(object):
             raise ValueError("文档类型ID号不能为空。")
         t_kl_type = self.state.dao.table["kl_type"]
         with self.state.dao.trans() as tx:
+            stmt = self.state.dao.select(
+                t_kl_type.c.collection
+            ).where(
+                t_kl_type.c.id.in_(id_)
+            )
+            rows = self.state.dao.list_(
+                tx.execute(stmt)
+            )
+            names = [
+                r["collection"] for r in rows
+            ]
+            self.state.vector.drop(
+                name=names
+            )
             stmt = self.state.dao.delete(t_kl_type)
             stmt = stmt.where(
                 t_kl_type.c.id.in_(id_)
@@ -69,20 +99,15 @@ class _Type(object):
     ):
         page_no = page_no or 0
         page_size = page_size or 30
-        t_kl_doc = self.state.dao.table["kl_type"]
         t_kl_type = self.state.dao.table["kl_type"]
         with self.state.dao.trans() as tx:
             stmt = self.state.dao.select(
-                t_kl_doc.c.id.label("doc_id"),
-                t_kl_doc.c.pid.label("doc_pid"),
-                t_kl_doc.c.name.label("doc_name"),
-                t_kl_doc.c.type.label("doc_type"),
-                t_kl_doc.c.create_by.label("user_id"),
-                t_kl_doc.c.create_at.label("doc_create_at"),
+                t_kl_type.c.id.label("id"),
+                t_kl_type.c.pid.label("pid"),
+                t_kl_type.c.name.label("name"),
                 t_kl_type.c.collection.label("collection"),
-                t_kl_type.c.name.label("doc_type_name"),
-            ).select_from(
-                t_kl_doc.join(t_kl_type, t_kl_type.c.id == t_kl_doc.c.pid)
+                t_kl_type.c.create_by.label("create_by"),
+                t_kl_type.c.create_at.label("create_at"),
             ).limit(
                 page_size
             ).offset(
@@ -103,33 +128,6 @@ class Knowledge(object):
         super().__init__()
         self.state = state
         self.type_ = _Type(state=self.state)
-
-    def get_info(
-            self,
-            id_: str | int | List[str] | List[int],
-    ):
-        t_type = self.state.dao.table["type"]
-        t_doc = self.state.dao.table["doc"]
-        stmt = self.state.dao.select(
-            t_doc.c.id.label("id"),
-            t_doc.c.title.label("title"),
-            t_doc.c.ext.label("ext"),
-            t_doc.c.create_at.label("create_at"),
-            t_type.c.id.label("type_id"),
-            t_type.c.name.label("type_name"),
-        ).select_from(
-            t_doc.outerjoin(t_type, t_type.c.id == t_doc.c.pid)
-        )
-        if not isinstance(id_, int):
-            id_ = str(int)
-        if not isinstance(id_, list):
-            id_ = [id_]
-        if id_:
-            stmt = stmt.where(
-                t_doc.c.id.in_(id_)
-            )
-        ret = self.state.dao.select(stmt)
-        return ret
 
     def create(
             self,
@@ -164,28 +162,48 @@ class Knowledge(object):
             )
         return ret
 
-    def reset(
+    def get(
             self,
             id_: str | int | List[str] | List[int],
-            chunk_size: int = 1000,
-            override_size: int = 300,
     ):
-        if isinstance(id_, str):
-            id_ = id_.split(",")
-        if not isinstance(id_, list):
-            id_ = [id_, ]
-        emb_ = svc_doc.embedding(
-            kl_doc_id=id_,
-            chunk_size=chunk_size,
-            override_size=override_size,
+        t_type = self.state.dao.table["type"]
+        t_doc = self.state.dao.table["doc"]
+        stmt = self.state.dao.select(
+            t_doc.c.id.label("id"),
+            t_doc.c.title.label("title"),
+            t_doc.c.ext.label("ext"),
+            t_doc.c.create_at.label("create_at"),
+            t_type.c.id.label("type_id"),
+            t_type.c.name.label("type_name"),
+        ).select_from(
+            t_doc.outerjoin(t_type, t_type.c.id == t_doc.c.pid)
         )
-        if not emb_:
-            raise Exception("向量化知识错误")
-        for c, v in emb_.items():
-            self.state.vector.insert(
-                name=c,
-                data=v,
+        if not isinstance(id_, int):
+            id_ = str(int)
+        if not isinstance(id_, list):
+            id_ = [id_]
+        if id_:
+            stmt = stmt.where(
+                t_doc.c.id.in_(id_)
             )
+        ret = self.state.dao.select(stmt)
+        return ret
+
+    def set_(
+            self,
+            data: Dict | List[Dict],
+    ):
+        if not isinstance(data, list):
+            data = [data, ]
+        t_kl_doc = self.state.dao.table["kl_doc"]
+        stmt = self.state.dao.update(t_kl_doc)
+        with self.state.dao.trans() as tx:
+            for d in data:
+                id_ = d.pop("id", None)
+                if not id_:
+                    continue
+                stmt_ = stmt.where(stmt.c.id == id_).values(**d)
+                tx.execute(stmt_)
 
     def list_(
             self,
@@ -218,8 +236,31 @@ class Knowledge(object):
             )
         return rows
 
+    def reset(
+            self,
+            id_: str | int | List[str] | List[int],
+            chunk_size: int = 1000,
+            override_size: int = 300,
+    ):
+        if isinstance(id_, str):
+            id_ = id_.split(",")
+        if not isinstance(id_, list):
+            id_ = [id_, ]
+        emb_ = svc_doc.embedding(
+            kl_doc_id=id_,
+            chunk_size=chunk_size,
+            override_size=override_size,
+        )
+        if not emb_:
+            raise Exception("向量化知识错误")
+        for c, v in emb_.items():
+            self.state.vector.insert(
+                name=c,
+                data=v,
+            )
 
-kl = Knowledge(
+
+knowledge = Knowledge(
     state=state
 )
 

@@ -28,6 +28,21 @@ async def post_knowledge_type(
     return res
 
 
+@router.delete("/type")
+async def delete_knowledge_type(
+        id: str | int
+):
+    res = define.Result()
+    try:
+        service.knowledge.type_.delete(
+            id_=id,
+        )
+    except Exception as ex:
+        res.code = -1
+        res.msg = str(ex)
+    return res
+
+
 @router.get("/type/list")
 async def get_knowledge_type_list(
         req: define.knowledge.GetKlTypeListReq
@@ -42,7 +57,7 @@ async def post_knowledge_reset(
 ):
     res = define.Result()
     try:
-        ret = service.knowledge.reset(
+        ret = service.kl.reset(
             id_=req.id,
         )
         res.data = ret
