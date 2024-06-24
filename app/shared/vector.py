@@ -19,8 +19,11 @@ class Milvus(object):
             **kwargs,
     ):
         super().__init__()
+        uri = f"http://{host}:{port}"
         self.client = MilvusClient(
-            host=host,
+            uri=uri,
+            db_name=name,
+            **kwargs,
         )
 
     def create(

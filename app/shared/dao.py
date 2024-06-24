@@ -14,7 +14,7 @@ class Table(object):
             engine: sa.Engine,
             metadata: sa.MetaData,
     ):
-        super(Table, self).__init__()
+        super().__init__()
         self.engine = engine
         self.metadata = metadata
 
@@ -78,7 +78,7 @@ class DAO(object):
             name: str,
             **kwargs
     ):
-        super(DAO, self).__init__()
+        super().__init__()
         self._url = sa.URL.create(
             drivername=driver,
             host=host,
@@ -182,7 +182,7 @@ class MySQL(DAO):
             name="default",
             **kwargs,
     ):
-        super(MySQL, self).__init__(
+        super().__init__(
             driver="mysql+pymysql",
             host=host,
             port=port,

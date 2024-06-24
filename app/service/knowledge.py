@@ -1,5 +1,4 @@
 from .base import *
-from app.service.doc import doc as svc_doc
 
 
 __all__ = (
@@ -18,31 +17,17 @@ class _Type(object):
 
     def add(
             self,
-            data: define.knowledge.KlType | List[define.knowledge.KlType],
+            req: define.knowledge.AddKlTypeReq
     ):
-        if not isinstance(data, list):
-            data = [data, ]
-        data_ = []
-        for d in data:
-            data_.append({
-                "id": d.id or shared.snow.sid(),
-                "pid": d.pid or 0,
-                "name": d.name or "",
-                "collection": d.collection or "",
-                "create_by": d.create_by or 0,
-                "create_at": d.create_at or 0,
-            })
+        data = req.data_()
+        if not data:
+            raise ValueError("数据不能为空。")
         with self.state.dao.trans() as tx:
-            for d in data_:
-                collection = d["collection"]
-                self.state.vector.create(
-                    name=collection,
-                    schema=modal.vector.Milvus.schema(dim=self.state.embedding.hidden_size),
-                    index=modal.vector.Milvus.index(),
-                )
-            t_type = self.state.dao.table["kl_type"]
-            stmt = self.state.dao.insert(t_type).values(data_)
-            tx.execute(stmt)
+            t = self.state.dao.table["kl_type"]
+            stmt = self.state.dao.insert(t).values(data)
+            self.state.dao.execute(
+                stmt=stmt, tx=tx,
+            )
 
     def set_(
             self,
@@ -60,7 +45,7 @@ class _Type(object):
                 stmt_ = stmt.where(stmt.c.id == id_).values(**d)
                 tx.execute(stmt_)
 
-    def delete(
+    def del_(
             self,
             id_: str | int | List[str] | List[int] | None = None,
     ):
@@ -100,23 +85,151 @@ class _Type(object):
         page_no = page_no or 0
         page_size = page_size or 30
         t_kl_type = self.state.dao.table["kl_type"]
+        source = self.state.dao.select(
+            t_kl_type.c.id.label("id"),
+            t_kl_type.c.pid.label("pid"),
+            t_kl_type.c.name.label("name"),
+            t_kl_type.c.collection.label("collection"),
+            t_kl_type.c.create_by.label("create_by"),
+            t_kl_type.c.create_at.label("create_at"),
+        )
         with self.state.dao.trans() as tx:
-            stmt = self.state.dao.select(
-                t_kl_type.c.id.label("id"),
-                t_kl_type.c.pid.label("pid"),
-                t_kl_type.c.name.label("name"),
-                t_kl_type.c.collection.label("collection"),
-                t_kl_type.c.create_by.label("create_by"),
-                t_kl_type.c.create_at.label("create_at"),
-            ).limit(
+            total = self.state.dao.execute(
+                self.state.dao.select(sa.func.count(source.c.id))
+            ).scalar()
+            stmt = source.limit(
                 page_size
             ).offset(
                 page_size * (page_no - 1)
             )
-            rows = self.state.dao.list_(
+            list_ = self.state.dao.list_(
                 tx.execute(stmt)
             )
-        return rows
+        return total, list_
+
+
+class _Doc(object):
+
+    def __init__(
+            self,
+            state: State | None = None,
+    ):
+        super().__init__()
+        self.state = state
+
+    def list_(
+            self,
+            id_: str | int | List[str] | List[int] | None = None,
+            pid: str | int | List[str] | List[int] | None = None,
+            page_no: int = 1,
+            page_size: int = 30,
+    ):
+        t_kl_doc = self.state.dao.table["kl_doc"]
+        t_kl_type = self.state.dao.table["kl_type"]
+        source = self.state.dao.select(
+            t_kl_doc.c.id.label("id"),
+            t_kl_doc.c.pid.label("pid"),
+            t_kl_doc.c.name.label("name"),
+            t_kl_doc.c.ext.label("ext"),
+            t_kl_doc.c.create_by.label("create_by"),
+            t_kl_doc.c.create_at.label("create_at"),
+            t_kl_type.c.name.label("type_name"),
+            t_kl_type.c.collection.label("collection"),
+        ).select_from(
+            t_kl_doc.join(t_kl_type, t_kl_type.c.id == t_kl_doc.c.pid)
+        )
+        id_ = shared.util.list_(id_)
+        if id_:
+            source = source.where(
+                t_kl_doc.c.id.in_(id_)
+            )
+        pid = shared.util.list_(pid)
+        if pid:
+            source = source.where(
+                t_kl_type.c.id.in_(pid)
+            )
+        with self.state.dao.trans() as tx:
+            total = self.state.dao.execute(
+                stmt=self.state.dao.select(
+                    sa.func.count(source.c.id)
+                ),
+                tx=tx,
+            ).scalar()
+            stmt = source.limit(page_size).offset(
+                page_size * (page_no - 1)
+            )
+            list_ = self.state.dao.list_(
+                self.state.dao.execute(
+                    stmt=stmt, tx=tx
+                )
+            )
+            return total, list_
+
+    def add(
+            self,
+            req: define.knowledge.AddKlDocReq,
+    ):
+        data = req.data_()
+        t_kl_doc = self.state.dao.table["kl_doc"]
+        stmt = self.state.dao.insert(
+            table=t_kl_doc,
+            update=req.update
+        ).values(data)
+        self.state.dao.execute(
+            stmt=stmt
+        )
+
+    def embedding(
+            self,
+            id_: str | int | List[str] | List[int],
+            chunk_size: int = 1000,
+            override_size: int = 300,
+    ):
+        id_ = shared.util.list_(id_)
+        if not id_:
+            raise ValueError("文档ID号错误")
+        t_kl_doc = self.state.dao.table["kl_doc"]
+        t_kl_type = self.state.dao.table["kl_type"]
+        with self.state.dao.trans() as tx:
+            stmt = self.state.dao.select(
+                t_kl_doc.c.id.label("id"),
+                t_kl_doc.c.name.label("name"),
+                t_kl_doc.c.ext.label("ext"),
+                t_kl_type.c.collection.label("collection"),
+            ).select_from(
+                t_kl_doc.join(t_kl_type, t_kl_type.c.id == t_kl_doc.c.pid)
+            ).where(
+                t_kl_doc.c.id.in_(id_)
+            )
+            res = tx.execute(stmt)
+            rows = self.state.dao.list_(rows=res)
+        file_dir = shared.config.args["root"]["path"]
+        data = {}
+        for row in rows:
+            id_ = row["id"]
+            ext = row["ext"]
+            cn = row["collection"]
+            file_name = f"{id_}.{ext}"
+            doc_ = shared.doc.load_from_file(
+                file_path=Path(file_dir, file_name)
+            )
+            chunks = doc_.split(
+                chunk_size=chunk_size,
+                overlap_size=override_size,
+            )
+            embedding = self.state.embedding.encode(
+                text=chunks
+            )
+            item = data.get(cn, [])
+            for i, emb in enumerate(embedding):
+                item.append({
+                    "id": shared.snow.sid(),
+                    "pid": id_,
+                    "embedding": emb["embedding"],
+                    "text": chunks[i],
+                })
+            data[cn] = item
+        return data
 
 
 class Knowledge(object):
@@ -127,7 +240,12 @@ class Knowledge(object):
     ):
         super().__init__()
         self.state = state
-        self.type_ = _Type(state=self.state)
+        self.type_ = _Type(
+            state=self.state,
+        )
+        self.doc = _Doc(
+            state=self.state,
+        )
 
     def create(
             self,
@@ -246,8 +364,8 @@ class Knowledge(object):
             id_ = id_.split(",")
         if not isinstance(id_, list):
             id_ = [id_, ]
-        emb_ = svc_doc.embedding(
-            kl_doc_id=id_,
+        emb_ = self.doc.embedding(
+            id_=id_,
             chunk_size=chunk_size,
             override_size=override_size,
         )

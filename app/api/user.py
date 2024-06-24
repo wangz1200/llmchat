@@ -14,8 +14,22 @@ async def post_user(
     res = define.Result()
     try:
         service.user.add(
-            data=req.data,
-            update=req.update
+            req=req
+        )
+    except Exception as ex:
+        res.code = -1
+        res.msg = str(ex)
+    return res
+
+
+@router.put("")
+async def put_user(
+        req: define.user.SetUserReq,
+):
+    res = define.Result()
+    try:
+        service.user.set_(
+            req=req,
         )
     except Exception as ex:
         res.code = -1

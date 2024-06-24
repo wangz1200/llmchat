@@ -8,14 +8,13 @@ router = fa.APIRouter(
 
 
 @router.post("")
-async def post_add_vector(
+async def post_vector(
         req: define.vector.AddVectorReq
 ):
     res = define.Result()
     try:
         service.vector.add(
-            name=req.name,
-            dim=req.dim,
+            req=req,
         )
     except Exception as ex:
         res.code = -1

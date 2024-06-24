@@ -9,6 +9,7 @@ from .snow import snow
 from .token import token
 from .img import img
 from .router import router
+from .util import util
 
 
 config.load(

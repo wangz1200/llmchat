@@ -17,15 +17,16 @@ class Vector(object):
 
     def add(
             self,
-            name: str,
-            dim: int,
+            req: define.vector.AddVectorReq
     ):
         m = modal.vector.Milvus()
-        self.state.vector.create(
-            name,
-            schema=m.schema(dim=dim),
-            index=m.index()
-        )
+        data = req.data()
+        for d in data:
+            self.state.vector.create(
+                name=d["name"],
+                schema=m.schema(dim=d["dim"] or self.state.embedding.hidden_size),
+                index=m.index(),
+            )
 
 
 vector = Vector(

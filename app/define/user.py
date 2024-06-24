@@ -6,13 +6,13 @@ from .base import *
 class UserItem(BaseModel):
 
     id: str | int | None = None
-    user: str | int | None = None
+    user: str | None = None
     name: str | None = None
     password: str | None = None
     dept: str | int | None = None
-    order: str | int | None = None
+    order: int | None = None
     create_by: str | int | None = None
-    create_at: int | None = None
+    create_at: str | int | None = None
 
 
 class UserReq(BaseModel):

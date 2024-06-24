@@ -2,9 +2,7 @@ from typing import Tuple, List, Dict, Any
 from pathlib import Path
 import openai
 import sqlalchemy as sa
-from app import shared
-from app import define
-from app import modal
+from app import shared, modal, define
 
 
 class State(object):
@@ -29,6 +27,7 @@ state = State()
 def _init_db(
         config: dict,
 ):
+    global state
     type_ = config["type"]
     if type_.lower() != "mysql":
         raise TypeError("Only MySQL is supported.")
@@ -49,16 +48,18 @@ def _init_db(
 def _init_vector(
         config: dict,
 ):
+    global state
     type_ = config.get("type", None)
     if type_ != "milvus":
         raise TypeError("Only Milvus is supported.")
-    host = config.get("host", None)
-    port = config.get("port", None)
+    host = config.get("host", "127.0.0.1")
+    port = config.get("port", 19530)
     name = config.get("name", "default")
     if host and port:
         state.vector = shared.vector.Milvus(
-            uri=f"http://{host}:{port}",
-            db_name=name,
+            host=host,
+            port=port,
+            name=name,
         )
     else:
         raise ValueError("vector host and port must be specified.")
@@ -67,6 +68,7 @@ def _init_vector(
 def _init_embedding(
         config: dict,
 ):
+    global state
     type_ = config.get("type", None)
     if type_ != "local":
         raise TypeError("Embedding only local is supported.")
@@ -89,6 +91,7 @@ def _init_embedding(
 def _init_llm(
         config: dict,
 ):
+    global state
     base_url = config["url"]
     api_key = config["key"]
     state.llm = openai.OpenAI(

@@ -1,28 +1,54 @@
 from .base import *
 
 
+class KlDoc(BaseModel):
+
+    id: str | int | None = None
+    pid: str | int | None = None
+    name: str | None = None
+    ext: str | None = None
+    create_by: int | str | None = None
+    create_at: int | str | None = None
+
+
 class KlType(BaseModel):
 
     id: str | int | None = None
     pid: str | int | None = None
-    collection: str | None = None
     name: str | None = None
-    create_by: int | None = None
-    create_at: int | None = None
+    collection: str | None = None
+    create_by: int | str | None = None
+    create_at: int | str | None = None
 
 
-class ResetKlReq(BaseModel):
+class AddKlDocReq(BaseModel):
 
-    id: str | int | List[str] | List[int]
+    data: KlDoc | List[KlDoc]
+    update: bool | None = None
+
+    def data_(self):
+        data = self.data
+        if not isinstance(data, list):
+            data = [data, ]
+        ret = []
+        for d in data:
+            d.id = d.id or shared.snow.sid()
+            ret.append(d.model_dump())
+        return ret
 
 
 class AddKlTypeReq(BaseModel):
 
     data: KlType | List[KlType]
+    update: bool | None = None
 
-
-class GetKlTypeListReq(BaseModel):
-
-    page_no: int | None = None
-    page_size: int | None = None
+    def data_(self):
+        data = self.data
+        if not isinstance(data, list):
+            data = [data, ]
+        ret = []
+        for d in data:
+            d.id = d.id or shared.snow.sid()
+            ret.append(d.model_dump())
+        return ret
 

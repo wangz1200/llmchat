@@ -14,7 +14,6 @@ class _Password(object):
     ):
         super().__init__()
         self.state = state
-        self.dao = self.state.dao
 
     def add(
             self,
@@ -24,7 +23,7 @@ class _Password(object):
         data = req.password()
         if not data:
             return
-        t = self.dao.table["password"]
+        t = self.state.dao.table["password"]
         stmt = self.state.dao.insert(
             t, update=req.update
         ).values(data)
@@ -41,11 +40,14 @@ class _Password(object):
         data = req.password()
         if not data:
             return
-        t = self.dao.table["password"]
+        t = self.state.dao.table["password"]
+        stmt = self.state.dao.update(t)
         for d in data:
-            stmt = self.state.dao.update(t).values(d)
+            id_ = d.pop("id", None)
+            if not id_ or not d:
+                continue
             self.state.dao.execute(
-                stmt=stmt,
+                stmt=stmt.values(**d).where(t.c.id == id_),
                 tx=tx,
             )
 
@@ -58,7 +60,6 @@ class _Dept(object):
     ):
         super().__init__()
         self.state = state
-        self.dao = self.state.dao
 
     def add(
             self,
@@ -68,7 +69,7 @@ class _Dept(object):
         data = req.dept()
         if not data:
             return
-        t = self.dao.table["user_dept"]
+        t = self.state.dao.table["user_dept"]
         stmt = self.state.dao.insert(
             t, update=req.update
         ).values(data)
@@ -85,11 +86,14 @@ class _Dept(object):
         data = req.dept()
         if not data:
             return
-        t = self.dao.table["user_dept"]
+        t = self.state.dao.table["user_dept"]
+        stmt = self.state.dao.update(t)
         for d in data:
-            stmt = self.state.dao.update(t).values(d)
+            id_ = d.pop("user", None)
+            if not id_ or not d:
+                continue
             self.state.dao.execute(
-                stmt=stmt,
+                stmt=stmt.values(**d).where(t.c.user == id_),
                 tx=tx,
             )
 
@@ -102,7 +106,6 @@ class User(object):
     ):
         super().__init__()
         self.state = state
-        self.dao = self.state.dao
         self.password = _Password(
             state=self.state
         )
@@ -118,7 +121,7 @@ class User(object):
             data = req.user()
             self.state.dao.execute(
                 self.state.dao.insert(
-                    table=self.dao.table["user"],
+                    table=self.state.dao.table["user"],
                     update=req.update
                 ).values(data),
                 tx=tx,
@@ -138,12 +141,16 @@ class User(object):
     ):
         with self.state.dao.trans() as tx:
             data = req.user()
-            self.state.dao.execute(
-                self.state.dao.update(
-                    table=self.dao.table["user"],
-                ).values(data),
-                tx=tx,
-            )
+            t = self.state.dao.table["user"]
+            stmt = self.state.dao.update(t)
+            for d in data:
+                id_ = d.pop("id", None)
+                if not id_ or not d:
+                    continue
+                self.state.dao.execute(
+                    stmt=stmt.values(**d).where(t.c.id == id_),
+                    tx=tx
+                )
             self.password.set_(
                 req=req,
                 tx=tx,
@@ -151,6 +158,25 @@ class User(object):
             self.dept.set_(
                 req=req,
                 tx=tx,
+            )
+
+    def delete(
+            self,
+            id_: str | int | List[str] | List[int] | None = None,
+    ):
+        if isinstance(id_, str):
+            id_ = id_.split(",")
+        if not isinstance(id_, list):
+            id_ = [id_]
+        if not id_:
+            raise ValueError("用户ID不能为空")
+        with self.state.dao.trans() as tx:
+            t = self.state.dao.table["user"]
+            stmt = self.state.dao.delete(t).where(
+                t.c.id.in_(id_)
+            )
+            self.state.dao.execute(
+                stmt=stmt, tx=tx,
             )
 
     def exists(
@@ -163,7 +189,7 @@ class User(object):
             id_ = [id_, ]
         if not id_:
             raise ValueError("ID不能为空。")
-        t = self.dao.table["user"]
+        t = self.state.dao.table["user"]
         stmt = self.state.dao.select(
             sa.func.count(t.c.id)
         ).where(
