@@ -361,6 +361,15 @@ class Knowledge(object):
                 stmt_ = stmt.where(stmt.c.id == id_).values(**d)
                 tx.execute(stmt_)
 
+    def del_(
+            self,
+            id_: str | int | List[str] | List[int] | None = None
+    ):
+        id_ = shared.util.list_(id_)
+        if not id_:
+            raise ValueError("ID号不能为空。")
+        t_kl_doc = self.state.dao.table["kl_doc"]
+
     def list_(
             self,
             page_no: int | None = 0,

@@ -131,6 +131,53 @@ class UserDept(Table):
         )
 
 
+class DocFolder(Table):
+
+    __tablename__ = "doc_folder"
+
+    def __init__(
+            self,
+            name: str | None = None,
+    ):
+        super().__init__(
+            name=name
+        )
+
+    @classmethod
+    def columns(cls):
+        return (
+            sa.Column("id", sa.BIGINT, nullable=False),
+            sa.Column("pid", sa.BIGINT, nullable=False, default=0),
+            sa.Column("name", sa.VARCHAR(512), nullable=False),
+            sa.Column("create_by", sa.BIGINT, nullable=False, default=0),
+            sa.Column("create_at", sa.BIGINT, nullable=False, default=0),
+        )
+
+
+class DocFile(Table):
+
+    __tablename__ = "doc_file"
+
+    def __init__(
+            self,
+            name: str | None = None,
+    ):
+        super().__init__(
+            name=name
+        )
+
+    @classmethod
+    def columns(cls):
+        return (
+            sa.Column("id", sa.BIGINT, nullable=False),
+            sa.Column("pid", sa.BIGINT, nullable=False, default=0),
+            sa.Column("name", sa.VARCHAR(512), nullable=False),
+            sa.Column("ext", sa.VARCHAR(512), nullable=False),
+            sa.Column("create_by", sa.BIGINT, nullable=False, default=0),
+            sa.Column("create_at", sa.BIGINT, nullable=False, default=0),
+        )
+
+
 class KlType(Table):
 
     __tablename__ = "kl_type"

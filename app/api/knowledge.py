@@ -10,6 +10,21 @@ router = fa.APIRouter(
 )
 
 
+@router.delete("")
+async def delete_knowledge(
+        id: str | int
+):
+    res = define.Result()
+    try:
+        service.knowledge.del_(
+            id_=id,
+        )
+    except Exception as ex:
+        res.code = -1
+        res.msg = str(ex)
+    return res
+
+
 @router.post("/type")
 async def post_knowledge_type(
         req: define.knowledge.AddKlTypeReq

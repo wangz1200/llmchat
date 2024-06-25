@@ -26,6 +26,14 @@ class Milvus(object):
             **kwargs,
         )
 
+    def has_collection(
+            self, 
+            name: str
+    ):
+        return self.client.has_collection(
+            collection_name=name,
+        )
+
     def create(
             self,
             name: str,

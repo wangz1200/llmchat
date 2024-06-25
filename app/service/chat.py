@@ -243,11 +243,11 @@ class Chat(object):
         idx = 0
         all_ = ""
         for t in text:
-            idx += 1
             c = t.choices[0].delta.content
             if not c:
                 continue
             if req.stream:
+                idx += 1
                 yield json.dumps({
                     "id": id_,
                     "pid": req.pid,

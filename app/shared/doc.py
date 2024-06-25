@@ -1,5 +1,4 @@
 from .base import *
-from pathlib import Path
 
 
 __all__ = (
