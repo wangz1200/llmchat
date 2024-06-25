@@ -1,6 +1,5 @@
 from .base import *
 
-
 router = fa.APIRouter(
     prefix="/chat",
     tags=["Chat", ],
@@ -14,9 +13,14 @@ router = fa.APIRouter(
 async def post_chat(
         req: define.chat.ChatReq,
 ):
-    return EventSourceResponse(service.chat.chat(
-        messages=req.messages,
-    ))
+    if req.knowledge:
+        return EventSourceResponse(service.chat.knowledge(
+            req=req,
+        ))
+    else:
+        return EventSourceResponse(service.chat.chat(
+            req=req,
+        ))
 
 
 @router.post("/agent")
@@ -27,4 +31,3 @@ async def chat_agent():
 shared.router.include_router(
     router=router
 )
-

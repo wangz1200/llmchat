@@ -97,6 +97,24 @@ async def post_knowledge_doc(
     return res
 
 
+@router.post("/doc/reset")
+async def post_knowledge_doc_reset(
+        req: define.knowledge.ResetDocReq
+):
+    res = define.Result()
+    try:
+        service.knowledge.doc.embedding(
+            id_=req.id,
+            chunk_size=req.chunk_size,
+            override_size=req.override_size,
+            insert=True,
+        )
+    except Exception as ex:
+        res.code = -1
+        res.msg = str(ex)
+    return res
+
+
 @router.get("/reset")
 async def post_knowledge_reset(
         id: str | int,

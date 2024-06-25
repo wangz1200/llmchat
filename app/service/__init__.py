@@ -4,4 +4,4 @@ from .user import user
 from .embedding import embedding
 from .vector import vector
 from .knowledge import knowledge
-from . import chat
+from .chat import chat

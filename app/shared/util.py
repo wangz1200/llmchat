@@ -16,7 +16,7 @@ class Util(object):
             data: Any,
             separator: str = ","
     ):
-        if data is None:
+        if not data:
             return []
         if isinstance(data, str):
             data = data.split(separator)

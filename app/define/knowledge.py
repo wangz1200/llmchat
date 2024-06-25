@@ -52,3 +52,10 @@ class AddKlTypeReq(BaseModel):
             ret.append(d.model_dump())
         return ret
 
+
+class ResetDocReq(BaseModel):
+
+    id: str | int | List[str] | List[int]
+    chunk_size: int = 1000
+    override_size: int = 300
+

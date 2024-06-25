@@ -1,7 +1,6 @@
 import json
 from .base import *
 
-
 __all__ = (
     "chat",
 )
@@ -53,12 +52,13 @@ class _Logger(object):
 
 
 class Chat(object):
-
     KL_PROMPT_TEMPLATE = """
-根据以下上下文内容进行专业对话。
+根据以下文内容进行专业对话。
 <内容>
 {context}
 </内容>
+
+
 """
     FUNC_PROMPT_TEMPLATE = """
 """
@@ -98,7 +98,7 @@ class Chat(object):
     ):
         pass
 
-    def prepare_kl_prompt(
+    def prepare_knowledge_prompt(
             self,
             query: str,
             knowledge: str,
@@ -106,6 +106,7 @@ class Chat(object):
         if not isinstance(query, list):
             query = [query, ]
         emb = self.state.embedding.encode(query)
+        emb = [e["embedding"] for e in emb]
         context = self.state.vector.search(
             name=knowledge,
             embedding=emb
@@ -209,6 +210,84 @@ class Chat(object):
                 "role": "assistant",
                 "content": all_,
             }
+
+    async def knowledge(
+            self,
+            req: define.chat.ChatReq,
+    ):
+        model = req.model or self.model
+        temperature = req.temperature or self.temperature
+        max_tokens = req.max_tokens or self.max_tokens
+        messages = req.messages
+        if not isinstance(messages, list):
+            messages = [messages, ]
+        if req.knowledge:
+            first = messages[0]
+            last = messages[-1]
+            query = last["content"]
+            prompt = self.prepare_knowledge_prompt(
+                query=query,
+                knowledge=req.knowledge,
+            )
+            if first["role"] != "system":
+                messages = [{"role": "system", "content": prompt}, ] + messages
+        text = state.llm.chat.completions.create(
+            messages=messages,
+            model=model,
+            max_tokens=max_tokens,
+            stream=True,
+            temperature=temperature,
+            stop=["<|im_end|>", "<|endoftext|>", ],
+        )
+        id_ = shared.snow.sid()
+        idx = 0
+        all_ = ""
+        for t in text:
+            idx += 1
+            c = t.choices[0].delta.content
+            if not c:
+                continue
+            if req.stream:
+                yield json.dumps({
+                    "id": id_,
+                    "pid": req.pid,
+                    "index": idx,
+                    "role": "assistant",
+                    "content": c,
+                }, ensure_ascii=False)
+            if not req.stream or req.log:
+                all_ += c
+        if req.log:
+            data = [
+                {
+                    "id": id_,
+                    "pid": req.pid,
+                    "role": messages[-1]["role"],
+                    "content": messages[-1]["content"],
+                    "create_by": 0,
+                    "create_at": 0,
+                },
+                {
+                    "id": id_,
+                    "pid": req.pid,
+                    "role": "assistant",
+                    "content": all_,
+                    "create_by": 0,
+                    "create_at": 0,
+                }
+            ]
+            self.logger.record(
+                data=data,
+                update=True,
+            )
+        if not req.stream:
+            yield json.dumps({
+                "id": id_,
+                "pid": req.pid,
+                "index": idx,
+                "role": "assistant",
+                "content": all_,
+            }, ensure_ascii=False, )
 
 
 chat = Chat(

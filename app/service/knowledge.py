@@ -184,6 +184,7 @@ class _Doc(object):
             id_: str | int | List[str] | List[int],
             chunk_size: int = 1000,
             override_size: int = 300,
+            insert: bool = False,
     ):
         id_ = shared.util.list_(id_)
         if not id_:
@@ -211,7 +212,7 @@ class _Doc(object):
             cn = row["collection"]
             file_name = f"{id_}.{ext}"
             doc_ = shared.doc.load_from_file(
-                file_path=Path(file_dir, file_name)
+                file_path=Path(file_dir, "public", "doc", file_name)
             )
             chunks = doc_.split(
                 chunk_size=chunk_size,
@@ -228,7 +229,44 @@ class _Doc(object):
                     "embedding": emb["embedding"],
                     "text": chunks[i],
                 })
+            if insert and item:
+                m = modal.vector.Milvus()
+                self.state.vector.create(
+                    name=cn,
+                    schema=m.schema(dim=self.state.embedding.hidden_size),
+                    index=m.index(),
+                )
+                self.state.vector.insert(
+                    name=cn,
+                    data=item,
+                )
             data[cn] = item
+        return data
+
+    def reset(
+            self,
+            req: define.knowledge.ResetDocReq
+    ):
+        id_ = shared.util.list_(
+            data=req.id
+        )
+        if not id_:
+            raise ValueError("文档ID号不能为空。")
+        t = self.state.dao.table["kl_doc"]
+        stmt = self.state.dao.select(t).where(
+            t.c.id.in_(id_)
+        )
+        list_ = self.state.dao.list_(
+            self.state.dao.execute(stmt)
+        )
+        if not list_:
+            return
+        data = self.embedding(
+            id_=id_,
+            chunk_size=req.chunk_size,
+            override_size=req.override_size,
+            insert=True,
+        )
         return data
 
 
