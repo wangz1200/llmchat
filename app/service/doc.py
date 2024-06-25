@@ -128,8 +128,7 @@ class _File(object):
         t_doc_file = self.state.dao.table["doc_file"]
         with self.state.dao.trans() as tx:
             stmt = self.state.dao.select(
-                t_doc_file.c.id.label("id"),
-                t_doc_file.c.ext.label("ext"),
+                t_doc_file
             ).where(
                 t_doc_file.c.id.in_(id_)
             )
@@ -139,7 +138,9 @@ class _File(object):
         data = []
         for row in rows:
             id_ = row["id"]
+            pid = row["pid"]
             ext = row["ext"]
+            name = row["name"]
             file_name = f"{id_}.{ext}"
             doc_ = shared.doc.load_from_file(
                 file_path=Path(file_dir, "public", "doc", file_name)
@@ -154,7 +155,9 @@ class _File(object):
             for i, emb in enumerate(embedding):
                 data.append({
                     "id": shared.snow.sid(),
-                    "pid": id_,
+                    "pid": pid,
+                    "ext": ext,
+                    "name": name,
                     "embedding": emb["embedding"],
                     "text": chunks[i],
                 })

@@ -21,6 +21,8 @@ class Milvus(object):
         )
         schema_.add_field(field_name="id", datatype=DataType.INT64, is_primary=True, auto_increment=False)
         schema_.add_field(field_name="pid", datatype=DataType.INT64)
+        schema_.add_field(field_name="ext", datatype=DataType.VARCHAR, max_length=32)
+        schema_.add_field(field_name="name", datatype=DataType.VARCHAR, max_length=512)
         schema_.add_field(field_name="embedding", datatype=DataType.FLOAT_VECTOR, dim=dim)
         schema_.add_field(field_name="text", datatype=DataType.VARCHAR, max_length=65535)
         return schema_
