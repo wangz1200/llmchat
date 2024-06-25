@@ -186,9 +186,19 @@ class _Folder(object):
 
     def add(
             self,
-            req: define.doc.AddDocFolderReq
+            req: define.doc.AddDocFolderReq,
+            tx: sa.Connection | None = None
     ):
-        pass
+        data = req.data_()
+        if not data:
+            raise ValueError("数据不能为空")
+        t = self.state.dao.table["doc_folder"]
+        stmt = self.state.dao.insert(t).values(data)
+        if tx:
+            tx.execute(stmt)
+        else:
+            with self.state.dao.trans() as tx:
+                tx.execute(stmt)
 
     def update(
             self,

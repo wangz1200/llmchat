@@ -1,5 +1,7 @@
 import json
 from .base import *
+from .doc import doc as svc_doc
+
 
 __all__ = (
     "chat",
@@ -98,7 +100,7 @@ class Chat(object):
     ):
         pass
 
-    def prepare_knowledge_prompt(
+    def extract_knowledge_prompt(
             self,
             query: str,
             knowledge: str,
@@ -111,16 +113,21 @@ class Chat(object):
             name=knowledge,
             embedding=emb
         )
-        text = [
-            c["entity"]["text"]
-            for c in context
-        ]
+        keys = {}
+        text = []
+        reference = []
+        for c in context:
+            text.append(c["entity"]["text"])
+            if c["id"] not in keys:
+                reference.append({
+                    "id": c["id"],
+                    "pid": c["pid"],
+                    "ext": c["ext"],
+                    "name": c["name"],
+                })
         if not text:
-            return ""
-        prompt = self.KL_PROMPT_TEMPLATE.format(
-            context="\n\n".join(text),
-        )
-        return prompt
+            return "", []
+        return text, reference
 
     def prepare_function_prompt(
             self
@@ -135,24 +142,11 @@ class Chat(object):
             max_tokens: int | None = None,
             stream: bool = True,
             temperature: float = 0.0,
-            knowledge: str | None = None,
             log: bool = False,
     ):
         model = model or self.model
         temperature = temperature or self.temperature
         max_tokens = max_tokens or self.max_tokens
-        if knowledge:
-            first = messages[0]
-            last = messages[-1]
-            query = last["content"]
-            prompt = self.prepare_kl_prompt(
-                query=query,
-                knowledge=knowledge,
-            )
-            if first["role"] != "system":
-                messages = [{"role": "system", "content": query}, ] + messages
-            else:
-                first["content"] = prompt
         text = state.llm.chat.completions.create(
             messages=messages,
             model=model,
@@ -221,16 +215,20 @@ class Chat(object):
         messages = req.messages
         if not isinstance(messages, list):
             messages = [messages, ]
+        reference = []
         if req.knowledge:
             first = messages[0]
             last = messages[-1]
             query = last["content"]
-            prompt = self.prepare_knowledge_prompt(
+            text, reference = self.extract_knowledge_prompt(
                 query=query,
                 knowledge=req.knowledge,
             )
+            system_prompt = self.KL_PROMPT_TEMPLATE.format(
+                context="\n\n".join(text),
+            )
             if first["role"] != "system":
-                messages = [{"role": "system", "content": prompt}, ] + messages
+                messages = [{"role": "system", "content": system_prompt}, ] + messages
         text = state.llm.chat.completions.create(
             messages=messages,
             model=model,
@@ -288,6 +286,9 @@ class Chat(object):
                 "role": "assistant",
                 "content": all_,
             }, ensure_ascii=False, )
+        yield json.dumps({
+            "reference": reference,
+        })
 
 
 chat = Chat(

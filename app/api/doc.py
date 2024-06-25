@@ -30,6 +30,13 @@ async def put_doc(
         req: define.doc.UpdateDocFileReq,
 ):
     res = define.Result()
+    try:
+        service.doc.file.update(
+            req=req
+        )
+    except Exception as ex:
+        res.code = -1
+        res.msg = str(ex)
     return res
 
 
@@ -40,7 +47,14 @@ async def get_doc_file_list(
 ):
     res = define.Result()
     try:
-        pass
+        total, list_ = service.doc.file.list_(
+            page_no=page_no,
+            page_size=page_size,
+        )
+        res.data = {
+            "total": total,
+            "list": list_,
+        }
     except Exception as ex:
         res.code = -1
         res.msg = str(ex)
@@ -74,6 +88,13 @@ async def post_doc_folder(
         req: define.doc.AddDocFolderReq
 ):
     res = define.Result()
+    try:
+        service.doc.folder.add(
+            req=req
+        )
+    except Exception as ex:
+        res.code = -1
+        res.msg = str(ex)
     return res
 
 
@@ -82,6 +103,44 @@ async def put_doc_folder(
         req: define.doc.UpdateDocFolderReq
 ):
     res = define.Result()
+    return res
+
+
+@router.delete("/folder")
+async def delete_doc_folder(
+        id: str | int,
+):
+    res = define.Result()
+    try:
+        service.doc.folder.remove(
+            id_=id
+        )
+    except Exception as ex:
+        res.code = -1
+        res.msg = str(ex)
+    return res
+
+
+@router.get("/folder/list")
+async def get_doc_folder_list(
+        id: str | int | None = None,
+        page_no: int = 1,
+        page_size: int = 30,
+):
+    res = define.Result()
+    try:
+        total, list_ = service.doc.folder.list_(
+            id_=id,
+            page_no=page_no,
+            page_size=page_size,
+        )
+        res.data = {
+            "total": total,
+            "list": list_,
+        }
+    except Exception as ex:
+        res.code = -1
+        res.msg = str(ex)
     return res
 
 
