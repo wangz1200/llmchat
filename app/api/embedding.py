@@ -3,7 +3,7 @@ from .base import *
 
 router = fa.APIRouter(
     prefix="/embedding",
-    tags=["embedding", ],
+    tags=["Embedding", ],
 )
 
 

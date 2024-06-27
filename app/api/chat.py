@@ -23,6 +23,15 @@ async def post_chat(
         ))
 
 
+@router.post("/tool")
+async def post_chat_tool(
+        req: define.chat.ChatToolReq,
+):
+    return EventSourceResponse(service.chat.tool(
+        req=req,
+    ))
+
+
 @router.post("/agent")
 async def chat_agent():
     return None

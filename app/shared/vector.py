@@ -68,8 +68,8 @@ class Milvus(object):
             score: float = 0.8,
             limit: int = 5,
     ):
-        if not output_fields:
-            output_fields = ["id", "pid", "text"]
+        # if not output_fields:
+        #     output_fields = ["id", "pid", "text"]
         if not isinstance(embedding[0], list):
             embedding = [embedding, ]
         res = self.client.search(

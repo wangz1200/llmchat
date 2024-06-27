@@ -58,8 +58,8 @@ You are a helpful assistant.
 ## 你可以访问以下工具:
 ### get_current_weather
 get_current_weather: 根据位置获取天气 | Get the current weather in a given location
-参数: {"type": "object", "properties": {"location": {"type": "string", "description": "位置 | The city and state, e.g. San Francisco, CA"}, "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]}}, "required": ["location"]}
-## 当你要调用工具时，请在回复中插入以下命令，可根据需要调用零或多次: | When you need to call a tool, please insert the following command in your reply, which can be called zero or multiple times according to your needs:
+args | 参数: {"type": "object", "properties": {"location": {"type": "string", "description": "位置 | The city and state, e.g. San Francisco, CA"}, "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]}}, "required": ["location"]}
+#### 当你要调用工具时，请在回复中插入以下命令，可根据需要调用零或多次: | When you need to call a tool, please insert the following command in your reply, which can be called zero or multiple times according to your needs:
 <|FUNCTION|>: 要使用的工具，在[get_current_weather]中选择。
 <|ARGS|>: 工具参数
 <|RESULT|>: 结果

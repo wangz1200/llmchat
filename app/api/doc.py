@@ -1,6 +1,5 @@
 from .base import *
 
-
 router = fa.APIRouter(
     prefix="/doc",
     tags=["Doc", ],
@@ -63,9 +62,29 @@ async def get_doc_file_list(
 
 @router.post("/file/upload")
 async def post_doc_upload(
+        r: fa.Request,
+        id: str | int = fa.Form(default=None),
+        pid: str | int = fa.Form(default=None),
+        name: str | int = fa.Form(default=None),
+        ext: str | int = fa.Form(default=""),
         file: fa.UploadFile = fa.File(...),
 ):
-    pass
+    res = define.Result()
+    try:
+        file_ = await file.read()
+        ext_ = file.filename.split(".")
+        ext_ = ext_[-1] if len(ext_) > 1 else ""
+        service.doc.file.upload(
+            name=name or file.filename,
+            ext=ext or ext_,
+            file_=file_,
+            id_=id,
+            pid=pid,
+        )
+    except Exception as ex:
+        res.code = -1
+        res.msg = str(ex)
+    return res
 
 
 @router.post("/file/embedding")
@@ -147,4 +166,3 @@ async def get_doc_folder_list(
 shared.router.include_router(
     router=router
 )
-

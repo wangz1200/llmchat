@@ -172,9 +172,12 @@ class DocFile(Table):
             sa.Column("id", sa.BIGINT, nullable=False),
             sa.Column("pid", sa.BIGINT, nullable=False, default=0),
             sa.Column("name", sa.VARCHAR(512), nullable=False),
-            sa.Column("ext", sa.VARCHAR(512), nullable=False),
+            sa.Column("ext", sa.VARCHAR(16), nullable=False),
+            sa.Column("md5", sa.VARCHAR(512), nullable=False),
             sa.Column("create_by", sa.BIGINT, nullable=False, default=0),
             sa.Column("create_at", sa.BIGINT, nullable=False, default=0),
+            sa.PrimaryKeyConstraint("id"),
+            sa.UniqueConstraint("md5"),
         )
 
 

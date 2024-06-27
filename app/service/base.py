@@ -39,9 +39,9 @@ def _init_db(
     modal.db.UserDept.register(dao)
     modal.db.DocFolder.register(dao)
     modal.db.DocFile.register(dao)
-    modal.db.KlType.register(dao)
-    modal.db.KlDoc.register(dao)
-    modal.db.KlDetail.register(dao)
+    # modal.db.KlType.register(dao)
+    # modal.db.KlDoc.register(dao)
+    # modal.db.KlDetail.register(dao)
     dao.table.create_all(
         checkfirst=True,
     )

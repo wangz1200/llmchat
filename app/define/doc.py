@@ -7,8 +7,9 @@ class DocFile(BaseModel):
     pid: str | int | None = None
     name: str | None = None
     ext: str | None = None
-    create_by: str | None = None
-    create_at: str | None = None
+    md5: str | None = None
+    create_by: str | int | None = None
+    create_at: str | int | None = None
 
 
 class DocFolder(BaseModel):
@@ -16,8 +17,8 @@ class DocFolder(BaseModel):
     id: str | int | None = None
     pid: str | int | None = None
     name: str | None = None
-    create_by: str | None = None
-    create_at: str | None = None
+    create_by: str | int | None = None
+    create_at: str | int | None = None
 
 
 class AddDocFileReq(BaseModel):
@@ -33,6 +34,8 @@ class AddDocFileReq(BaseModel):
         for d in data:
             d.id = d.id or shared.snow.sid()
             d.pid = d.pid or 0
+            d.create_by = d.create_by or 0
+            d.create_at = d.create_at or 0
             ret.append(d.model_dump())
         return ret
 
@@ -58,7 +61,7 @@ class EmbDocFileReq(BaseModel):
     id: str | int
     chunk_size: int | None = 1000
     override_size: int | None = 300
-    collection: str | None = None
+    collection: str
 
 
 class AddDocFolderReq(BaseModel):

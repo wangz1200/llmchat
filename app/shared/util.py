@@ -1,4 +1,5 @@
 from .base import *
+import hashlib
 
 
 __all__ = (
@@ -23,6 +24,12 @@ class Util(object):
         if not isinstance(data, list):
             data = [data, ]
         return data
+
+    def md5(
+            self,
+            content: bytes
+    ):
+        return hashlib.md5(content).hexdigest()
 
 
 util = Util()

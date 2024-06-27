@@ -1,4 +1,6 @@
 import json
+import re
+
 from .base import *
 from .doc import doc as svc_doc
 
@@ -111,13 +113,15 @@ class Chat(object):
         emb = [e["embedding"] for e in emb]
         context = self.state.vector.search(
             name=knowledge,
-            embedding=emb
+            embedding=emb,
+            output_fields=["id", "pid", "name", "ext", "text"]
         )
         keys = {}
         text = []
         reference = []
         for c in context:
-            text.append(c["entity"]["text"])
+            c = c["entity"]
+            text.append(c["text"])
             if c["id"] not in keys:
                 reference.append({
                     "id": c["id"],
@@ -136,17 +140,14 @@ class Chat(object):
 
     async def chat(
             self,
-            messages: List[Dict[str, str]],
-            pid: str | int = 0,
-            model: str | None = None,
-            max_tokens: int | None = None,
-            stream: bool = True,
-            temperature: float = 0.0,
-            log: bool = False,
+            req: define.chat.ChatReq,
     ):
-        model = model or self.model
-        temperature = temperature or self.temperature
-        max_tokens = max_tokens or self.max_tokens
+        model = req.model or self.model
+        temperature = req.temperature or self.temperature
+        max_tokens = req.max_tokens or self.max_tokens
+        messages = req.messages
+        if not isinstance(messages, list):
+            messages = [messages, ]
         text = state.llm.chat.completions.create(
             messages=messages,
             model=model,
@@ -159,25 +160,25 @@ class Chat(object):
         idx = 0
         all_ = ""
         for t in text:
-            idx += 1
             c = t.choices[0].delta.content
             if not c:
                 continue
-            if stream:
+            if req.stream:
+                idx += 1
                 yield json.dumps({
                     "id": id_,
-                    "pid": pid,
+                    "pid": req.pid,
                     "index": idx,
                     "role": "assistant",
                     "content": c,
                 }, ensure_ascii=False)
-            if not stream or log:
+            if not req.stream or req.log:
                 all_ += c
-        if log:
+        if req.log:
             data = [
                 {
                     "id": id_,
-                    "pid": pid,
+                    "pid": req.pid,
                     "role": messages[-1]["role"],
                     "content": messages[-1]["content"],
                     "create_by": 0,
@@ -185,7 +186,7 @@ class Chat(object):
                 },
                 {
                     "id": id_,
-                    "pid": pid,
+                    "pid": req.pid,
                     "role": "assistant",
                     "content": all_,
                     "create_by": 0,
@@ -196,14 +197,14 @@ class Chat(object):
                 data=data,
                 update=True,
             )
-        if not stream:
-            yield {
+        if not req.stream:
+            yield json.dumps({
                 "id": id_,
-                "pid": pid,
+                "pid": req.pid,
                 "index": idx,
                 "role": "assistant",
                 "content": all_,
-            }
+            }, ensure_ascii=False)
 
     async def knowledge(
             self,
@@ -288,7 +289,129 @@ class Chat(object):
             }, ensure_ascii=False, )
         yield json.dumps({
             "reference": reference,
-        })
+        }, ensure_ascii=False)
+
+    async def func_call(
+            self,
+            query: str,
+    ):
+        function_pattern = r"<\|FUNCTION\|>: (.*?)\n"
+        args_pattern = r"<\|ARGS\|>: (.*)"
+        template = modal.tool.function.template()
+        messages = [
+            {
+                "role": "system",
+                "content": template
+            },
+            {
+                "role": "user",
+                "content": query,
+            }
+        ]
+        text = state.llm.chat.completions.create(
+            messages=messages,
+            model=self.model,
+            max_tokens=self.max_tokens,
+            stream=True,
+            temperature=0,
+            stop=["<|RETURN|>", "<|im_end|>", "<|endoftext|>", ],
+        )
+        context = ""
+        ret = []
+        for t in text:
+            c = t.choices[0].delta.content
+            if not c:
+                continue
+            context += c
+        fn_match = re.search(function_pattern, context)
+        names = fn_match.group(1)
+        args_match = re.search(args_pattern, context)
+        args = args_match.group(1)
+        names = names.split(",")
+        for name in names:
+            name = name.strip()
+            fn = getattr(modal.tool.function, name)
+            a = json.loads(args)
+            if not fn:
+                continue
+            ret.append(fn(a))
+        return ret
+
+    async def tool(
+            self,
+            req: define.chat.ChatToolReq,
+    ):
+        messages = shared.util.list_(req.messages)
+        last = messages[-1]
+        ret = await self.func_call(
+            query=last["content"]
+        )
+        system = []
+        if ret:
+            prompt = "\n".join(ret)
+            system = {
+                "role": "system",
+                "content": prompt,
+            }
+        if len(messages) == 1 and system:
+            messages = [system, ] + messages
+        text = state.llm.chat.completions.create(
+            messages=messages,
+            model=req.model or self.model,
+            max_tokens=req.max_tokens or self.max_tokens,
+            stream=True,
+            temperature=req.temperature or self.temperature,
+            stop=["<|im_end|>", "<|endoftext|>", ],
+        )
+        id_ = shared.snow.sid()
+        idx = 0
+        all_ = ""
+        for t in text:
+            c = t.choices[0].delta.content
+            if not c:
+                continue
+            if req.stream:
+                idx += 1
+                yield json.dumps({
+                    "id": id_,
+                    "pid": req.pid,
+                    "index": idx,
+                    "role": "assistant",
+                    "content": c,
+                }, ensure_ascii=False)
+            if not req.stream or req.log:
+                all_ += c
+        if req.log:
+            data = [
+                {
+                    "id": id_,
+                    "pid": req.pid,
+                    "role": messages[-1]["role"],
+                    "content": messages[-1]["content"],
+                    "create_by": 0,
+                    "create_at": 0,
+                },
+                {
+                    "id": id_,
+                    "pid": req.pid,
+                    "role": "assistant",
+                    "content": all_,
+                    "create_by": 0,
+                    "create_at": 0,
+                }
+            ]
+            self.logger.record(
+                data=data,
+                update=True,
+            )
+        if not req.stream:
+            yield json.dumps({
+                "id": id_,
+                "pid": req.pid,
+                "index": idx,
+                "role": "assistant",
+                "content": all_,
+            }, ensure_ascii=False)
 
 
 chat = Chat(

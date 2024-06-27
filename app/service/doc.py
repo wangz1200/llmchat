@@ -24,8 +24,10 @@ class _File(object):
         data = req.data_()
         if not data:
             raise ValueError("数据不能为空。")
-        t = self.state.dao.table["doc_file"]
-        stmt = self.state.dao.insert(t).values(data)
+        t_doc_file = self.state.dao.table["doc_file"]
+        stmt = self.state.dao.insert(
+            table=t_doc_file,
+        ).values(data)
         self.state.dao.execute(
             stmt=stmt, tx=tx,
         )
@@ -43,6 +45,7 @@ class _File(object):
                 tx.execute(
                     stmt.values(**d).where(t.c.id == id_)
                 )
+
         data = req.data_()
         if not data:
             raise ValueError("数据不能为空。")
@@ -69,6 +72,53 @@ class _File(object):
         self.state.dao.execute(
             stmt=stmt, tx=tx,
         )
+
+    def exists(
+            self,
+            md5: str | None = None,
+            tx: sa.Connection | None = None,
+    ):
+        t = self.state.dao.table["doc_file"]
+        stmt = self.state.dao.select(
+            sa.func.count(t.c.id)
+        ).where(
+            t.c.md5.in_([md5, ])
+        )
+        count = self.state.dao.execute(
+            stmt=stmt, tx=tx,
+        ).scalar()
+        return count > 0
+
+    def upload(
+            self,
+            name: str,
+            ext: str,
+            file_: bytes,
+            id_: str | int | None = None,
+            pid: str | int | None = None,
+            create_by: int | str | None = None,
+            create_at: int | None = None,
+    ):
+        id_ = id_ or shared.snow.sid()
+        md5 = shared.util.md5(file_)
+        data = define.doc.DocFile(
+            id=id_,
+            pid=pid or 0,
+            name=name,
+            ext=ext,
+            md5=md5,
+            create_by=create_by or 0,
+            create_at=create_at or 0,
+        )
+        req = define.doc.AddDocFileReq(
+            data=data
+        )
+        doc_dir = Path(shared.config.args["root"]["path"], "public", "doc")
+        with self.state.dao.trans() as tx:
+            self.add(req=req, tx=tx)
+            fn = f"{id_}.{ext}"
+            with Path(doc_dir, fn).open(mode="wb") as f:
+                f.write(file_)
 
     def list_(
             self,
@@ -213,6 +263,7 @@ class _Folder(object):
                 tx.execute(
                     stmt.values(**d).where(t.c.id == id_)
                 )
+
         data = req.data_()
         if not data:
             raise ValueError("数据不能为空。")

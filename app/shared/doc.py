@@ -19,7 +19,9 @@ def load_from_file(
         raise FileExistsError("文件不存在。")
     ext = file_path.suffix
     match ext.lower():
-        case ".txt":
+        case "txt", ".txt", "json", ".json":
+            cls = Text
+        case ".json":
             cls = Text
         case _:
             raise Exception(f"不支持的文件格式{ext}")

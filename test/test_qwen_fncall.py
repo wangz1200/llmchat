@@ -43,7 +43,7 @@ def test():
                 "properties": {
                     'location': {
                         'type': 'string',
-                        'description': "位置 | The city and state, e.g. San Francisco, CA",
+                        'description': "位置 | location",
                     },
                     "unit": {
                         "type": "string",
