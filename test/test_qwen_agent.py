@@ -33,7 +33,8 @@ llm_cfg = {
     'model_server': 'http://10.133.95.100:9103/v1',
     'generate_cfg': {
         'top_p': 0.8
-    }
+    },
+    "stream": False,
 }
 
 # Step 3: Create an agent. Here we use the `Assistant` agent as an example, which is capable of using tools and reading files.
@@ -59,7 +60,7 @@ while True:
     # Append the user query to the chat history.
     messages.append({'role': 'user', 'content': query})
     response = []
-    for response in bot.run(messages=messages):
+    for response in bot.run(messages=messages, stream=False):
         # Streaming output.
         print('bot response:')
         pprint.pprint(response, indent=2)
